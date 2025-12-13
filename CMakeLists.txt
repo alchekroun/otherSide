@@ -14,8 +14,12 @@ set(ASIO_INCLUDE_DIR "${EXTERN_DIR}/asio/include")
 set(RTC_INCLUDE_DIR "${EXTERN_DIR}/libdatachannel/include")
 set(RTC_LIBRARY_DIR "${EXTERN_DIR}/libdatachannel/build")
 
+# qlexNet
+set(QLEXNET_INCLUDE_DIR "${EXTERN_DIR}/qlexNet/include")
+
 include_directories(
     ${ASIO_INCLUDE_DIR}
+    ${QLEXNET_INCLUDE_DIR}
     ${RTC_INCLUDE_DIR}
     ${SRC_DIR}
 )
@@ -24,9 +28,6 @@ link_directories(${RTC_LIBRARY_DIR})
 
 # Regrouper les sources
 set(SOURCES
-    src/device/Device.cpp
-    src/network/Connection.cpp
-    src/network/Signaler.cpp
     src/main.cpp
 )
 

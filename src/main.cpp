@@ -1,32 +1,28 @@
-#include "device/Device.h"
-#include "video/FakeVideoSource.h"
-#include <memory>
 #include <iostream>
+#include "Signaler.h"
+#include "Client.h"
+#include "Server.h"
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::cout << "Usage:\n  otherSide host <port>\n  otherSide client <host_ip> <port>\n";
+    if (argc < 2) {
+        std::cout << "Usage:\n";
+        std::cout << "  ./otherSide host\n";
+        std::cout << "  ./otherSide client <host_ip>\n";
         return 0;
     }
-
-    std::string mode = argv[1];
-    uint16_t port = 9000;
-    std::string hostIp;
-    if (mode == "host") {
-        port = static_cast<uint16_t>(std::stoi(argv[2]));
-    } else {
-        if (argc < 4) {
-            std::cerr << "client requires host_ip and port\n";
-            return 1;
-        }
-        hostIp = argv[2];
-        port = static_cast<uint16_t>(std::stoi(argv[3]));
+    auto type = std::string(argv[1]);
+    if (type == "host") {
+        auto t = std::thread([]{
+            auto signalingServer = otherside::Server(8000);
+            signalingServer.start();
+        });
+        t.join();
+    } else if (type == "client") {
+        auto t = std::thread([]{
+            auto client = otherside::Client("127.0.0.1", 8000);
+            client.start();
+        });
+        t.join();
     }
-
-    auto source = std::make_unique<FakeVideoSource>(160, 120, 5);
-    Device device(mode, hostIp, port, std::move(source));
-    device.run();
-
     return 0;
 }
-
