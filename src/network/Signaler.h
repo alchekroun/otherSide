@@ -1,20 +1,33 @@
 #pragma once
 
+#include <rtc/rtc.hpp>
 #include <qlexnet.h>
 #include <memory>
 #include <string>
 
-#include "MessageTypes.h"
-#include "Logger.h"
+#include "logger/Logger.h"
 
 
 namespace otherside
 {
 using asio::ip::tcp;
 
+enum class MsgType : uint32_t
+{
+    PING,
+    ACK_CONNECTION,
+    REQUEST,
+    OFFER,
+    READY,
+    ANSWER
+};
+
 class SignalerServer : public qlexnet::ServerInterface<MsgType> {
     public:
     SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port) {}
+
+    std::function<void(uint32_t)> onRequest;
+    std::function<void(uint32_t, rtc::Description)> onReady;
 
     protected:
     virtual bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override {
@@ -32,15 +45,34 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType> {
         switch (msg_.header.id)
         {
         case MsgType::PING:
-            {
+        {
+            qlexnet::MessageReader mr(msg_);
             std::chrono::steady_clock::time_point start;
-            msg_ >> start;
+            auto ok = mr.readString();
+            mr.read(start);
+            _log->msg(ok);
             qlexnet::Message<MsgType> msg;
             msg.header.id = MsgType::PING;
-            msg << start;
+
+            qlexnet::MessageWriter mw(msg);
+            mw.write(start);
             client_->send(msg);
             break;
-            }
+        }
+        case MsgType::REQUEST:
+        {
+            onRequest(client_->GetID());
+            break;
+        }
+        case MsgType::READY:
+        {
+            qlexnet::MessageReader mr(msg_);
+            auto type = mr.readString();
+            auto sdp = mr.readString();
+            _log->msg(type, sdp);
+            onReady(client_->GetID(), rtc::Description(sdp, type));
+            break;
+        }
         default:
             break;
         }
@@ -56,6 +88,8 @@ class SignalerClient : public qlexnet::ClientInterface<MsgType> {
 
     bool connect() { return qlexnet::ClientInterface<MsgType>::connect(hostIp, port); }
 
+    std::function<void(rtc::Description)> onOffer;
+
     void run() {
         while (isConnected()) {
             if (incoming().empty()) {
@@ -68,25 +102,29 @@ class SignalerClient : public qlexnet::ClientInterface<MsgType> {
                 case MsgType::PING:
                 {
                     std::chrono::steady_clock::time_point start;
-                    msg >> start;
+                    qlexnet::MessageReader mr(msg);
+                    mr.read(start);
                     auto now = std::chrono::high_resolution_clock::now();
                     auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
                     _log->msg("...Pong - ", elapsed_ms.count(), "ms");
                     break;
                 }
                 case MsgType::ACK_CONNECTION:
+                {
                     _log->msg("Server accepted the connnection.");
+                    qlexnet::Message<MsgType> msg;
+                    msg.header.id = MsgType::REQUEST;
+                    send(msg);
                     break;
+                }
                 case MsgType::OFFER:
                 {
-                    _log->msg("Server published its sdp offer.");
-                    std::string type;
-                    std::string sdp;
-                    msg >> type >> sdp;
-                    _log->msg("Received : ", type, " - ", sdp);
-                    qlexnet::Message<MsgType> msg;
-                    msg.header.id = MsgType::READY;
-                    send(msg);
+                    _log->msg("Server published its SDP offer (size: ", msg.header.size, ")");
+                    qlexnet::MessageReader mr(msg);
+                    auto type = mr.readString();
+                    auto sdp = mr.readString();
+                    _log->msg("SDP offer: ", sdp);
+                    onOffer(rtc::Description(sdp, type));
                     break;
                 }
                 default:
@@ -100,12 +138,16 @@ class SignalerClient : public qlexnet::ClientInterface<MsgType> {
         qlexnet::Message<MsgType> msg;
         msg.header.id = MsgType::PING;
         auto start = std::chrono::high_resolution_clock::now();
-        msg << start;
+        std::string s("Ping!");
+        qlexnet::MessageWriter<MsgType> mw(msg);
+        mw.writeString(s);
+        mw.write(start);
         _log->msg("Ping...");
         send(msg);
     }
 
     private:
+    int count = 0;
     uint16_t port;
     std::string hostIp;
 

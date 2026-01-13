@@ -7,3 +7,12 @@
 [submodule "extern/qlexNet"]
 	path = extern/qlexNet
 	url = git@github.com:alchekroun/qlexNet.git
+[submodule "extern/imgui"]
+	path = extern/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "extern/rlImGui"]
+	path = extern/rlImGui
+	url = git@github.com:raylib-extras/rlImGui.git
+[submodule "extern/raylib"]
+	path = extern/raylib
+	url = https://github.com/raysan5/raylib
