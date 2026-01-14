@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 
-#include "network/Signaler.h"
+#include "network/SignalerServer.h"
 #include "utils.h"
 #include "ISession.h"
 #include "SessionThreaded.h"
@@ -54,10 +54,11 @@ class HostSession : public ISession, public SessionThreaded {
         _log->msg("Start Signaler server");
 
         _ss->start();
-        _signaling_thread = std::thread([this]{ while(true) _ss->update(-1, true); });
+        _signaling_thread = std::thread([this]{ _ss->run(); });
     }
 
     void stop() override {
+        _ss->running = false;
         _ss->stop();
         if (_signaling_thread.joinable()) _signaling_thread.join();
         SessionThreaded::stop();

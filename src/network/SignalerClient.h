@@ -6,81 +6,9 @@
 #include <string>
 
 #include "logger/Logger.h"
+#include "SignalerMessageType.h"
 
-
-namespace otherside
-{
-using asio::ip::tcp;
-
-enum class MsgType : uint32_t
-{
-    PING,
-    ACK_CONNECTION,
-    REQUEST,
-    OFFER,
-    READY,
-    ANSWER
-};
-
-class SignalerServer : public qlexnet::ServerInterface<MsgType> {
-    public:
-    SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port) {}
-
-    std::function<void(uint32_t)> onRequest;
-    std::function<void(uint32_t, rtc::Description)> onReady;
-
-    protected:
-    virtual bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override {
-        qlexnet::Message<MsgType> msg;
-        msg.header.id = MsgType::ACK_CONNECTION;
-        client_->send(msg);
-        return true;
-    }
-
-    virtual void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override {
-        _log->msg("Client disconnected");
-    }
-
-    virtual void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_, qlexnet::Message<MsgType> &msg_) override {
-        switch (msg_.header.id)
-        {
-        case MsgType::PING:
-        {
-            qlexnet::MessageReader mr(msg_);
-            std::chrono::steady_clock::time_point start;
-            auto ok = mr.readString();
-            mr.read(start);
-            _log->msg(ok);
-            qlexnet::Message<MsgType> msg;
-            msg.header.id = MsgType::PING;
-
-            qlexnet::MessageWriter mw(msg);
-            mw.write(start);
-            client_->send(msg);
-            break;
-        }
-        case MsgType::REQUEST:
-        {
-            onRequest(client_->GetID());
-            break;
-        }
-        case MsgType::READY:
-        {
-            qlexnet::MessageReader mr(msg_);
-            auto type = mr.readString();
-            auto sdp = mr.readString();
-            _log->msg(type, sdp);
-            onReady(client_->GetID(), rtc::Description(sdp, type));
-            break;
-        }
-        default:
-            break;
-        }
-    }
-
-    private:
-    std::unique_ptr<Logger> _log = std::make_unique<Logger>("SignalerServer");
-};
+namespace otherside {
 
 class SignalerClient : public qlexnet::ClientInterface<MsgType> {
     public:

@@ -7,7 +7,7 @@
 
 #include "ISession.h"
 #include "SessionThreaded.h"
-#include "network/Signaler.h"
+#include "network/SignalerClient.h"
 #include "logger/Logger.h"
 #include "utils.h"
 
