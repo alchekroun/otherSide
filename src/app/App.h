@@ -4,9 +4,11 @@
 #include <thread>
 
 #include "logger/Logger.h"
-#include "ui/BaseUI.h"
+#include "ui/ScreenRouter.h"
 #include "app/AppEvent.h"
 #include "app/AppState.h"
+#include "app/AppScreen.h"
+#include "message/NetMessage.h"
 #include "session/ISession.h"
 #include "session/HostSession.h"
 #include "session/ClientSession.h"
@@ -15,12 +17,17 @@ namespace otherside {
 
 // template<typename T>
 class Application {
+    using EventSink = std::function<void(AppEvent)>;
 
     public:
-    Application() {
-        _gui = std::make_unique<BaseUI>(
-            [this](AppEvent ev) { pushEvent(ev); }
-        );
+    Application() :
+        _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
+        _uiMessages(std::make_unique<UiMessageFeed>())
+    {
+        _gui->registerScreen<RoleSelectionScreen>(AppScreen::RoleSelectionScreen);
+        _gui->registerScreen<HostScreen>(AppScreen::HostScreen, _uiMessages);
+        _gui->registerScreen<ClientScreen>(AppScreen::ClientScreen);
+        _gui->registerScreen<IdleScreen>(AppScreen::IdleScreen);
     }
     ~Application() { stop(); }
 
@@ -41,10 +48,12 @@ class Application {
         case AppEvent::StartHost:
             _log->msg("Switching to HOST mode");
             setState(AppState::StartingHost);
+            _gui->setScreen(AppScreen::HostScreen);
             break;
         case AppEvent::StartClient:
             _log->msg("Switching to Client mode");
             setState(AppState::StartingClient);
+            _gui->setScreen(AppScreen::ClientScreen);
             break;
         default:
             break;
@@ -56,6 +65,7 @@ class Application {
         InitWindow(_WINDOW_HEIGHT, _WINDOW_WIDTH, _WINDOW_HEADER_TEXT.c_str());
         SetWindowState(FLAG_VSYNC_HINT);
 
+        _gui->setScreen(AppScreen::IdleScreen);
         _gui->start();
 
         while (!WindowShouldClose())
@@ -92,10 +102,6 @@ class Application {
         CloseWindow();
     }
 
-    std::unique_ptr<BaseUI> _gui;
-    std::unique_ptr<ISession> _session;
-    // std::unique_ptr<T> _network = std::make_unique<T>();
-
     private:
     std::optional<AppEvent> popEvent() {
         std::lock_guard<std::mutex> lock(_eventMutex);
@@ -119,7 +125,7 @@ class Application {
         {
         case AppState::StartingHost:
             _log->msg("Switching to HOST mode");
-            _session = std::make_unique<HostSession>(8000);
+            _session = std::make_unique<HostSession>(8000, _uiMessages.get());
             _session->start();
             setState(AppState::Hosting);
             break;
@@ -137,6 +143,9 @@ class Application {
         }
     }
 
+    std::shared_ptr<UiMessageFeed> _uiMessages;
+    std::unique_ptr<ScreenRouter> _gui;
+    std::unique_ptr<ISession> _session;
 
     std::queue<AppEvent> _eventQueue;
     std::mutex _eventMutex;

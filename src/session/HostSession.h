@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "ISession.h"
 #include "SessionThreaded.h"
+#include "message/NetMessage.h"
 
 namespace otherside {
 
@@ -33,7 +34,7 @@ struct ClientConnection {
 
 class HostSession : public ISession, public SessionThreaded {
     public:
-    HostSession(uint16_t port) {
+    HostSession(uint16_t port, UiMessageFeed* feed) : _uiMessages(feed) {
         _ss = std::make_unique<SignalerServer>(port);
         _config.iceServers.clear();
         rtc::InitLogger(rtc::LogLevel::Debug);
@@ -126,6 +127,7 @@ class HostSession : public ISession, public SessionThreaded {
 
         dc->onMessage(nullptr, [this, wdc = make_weak_ptr(dc)](std::string msg){
             _log->msg("onMessage : " + msg);
+            _uiMessages->push(UiMessage{"Client", msg});
             if (auto dc = wdc.lock()) {
                 dc->send("Ping");
             }
@@ -135,6 +137,8 @@ class HostSession : public ISession, public SessionThreaded {
         pc->createOffer();
         return client;
     }
+
+    UiMessageFeed* _uiMessages;
 
     std::thread _signaling_thread;
     std::unique_ptr<SignalerServer> _ss;
