@@ -4,9 +4,12 @@
 #include <queue>
 #include <mutex>
 
+#include "DCMessageManager.h"
+
 namespace otherside {
 
 struct UiMessage {
+    DCMessageType type;
     std::string from;
     std::string text;
     // uint64_t timestamp;
@@ -14,8 +17,9 @@ struct UiMessage {
 
 class IMessageFeed {
 public:
-    virtual std::vector<UiMessage> consume() = 0;
     virtual ~IMessageFeed() = default;
+    virtual bool empty() = 0;
+    virtual std::vector<UiMessage> consume() = 0;
 };
 
 class UiMessageFeed final : public IMessageFeed {
@@ -30,6 +34,11 @@ public:
         auto out = std::move(_buffer);
         _buffer.clear();
         return out;
+    }
+
+    bool empty() override {
+        std::lock_guard lock(_mtx);
+        return _buffer.empty();
     }
 
 private:

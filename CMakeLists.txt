@@ -60,16 +60,15 @@ link_directories(
     ${RTC_LIBRARY_DIR}
 )
 
-set(SOURCES
-    src/main.cpp
-)
+add_subdirectory(src/app)
+add_subdirectory(src/session)
+add_subdirectory(src/message)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} src/main.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        datachannel
-        raylib
-        imgui
-        rlImGui
+        app
+        session
+        netMessage
 )

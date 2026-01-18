@@ -6,15 +6,30 @@ namespace otherside {
 
 class ClientScreen : public IScreen {
 public:
-    ClientScreen(EventSink sink) : IScreen(sink) {}
+    ClientScreen(EventSink sink, std::shared_ptr<IMessageFeed> rxFeed, std::shared_ptr<UiMessageFeed> txFeed) :
+    IScreen(sink), _messagePanel(rxFeed), _inputMessagePanel(txFeed)
+    {}
 
     void render() override {
-        ImGui::Begin("Client");
+        ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Client", nullptr, ImGuiWindowFlags_NoCollapse);
 
-        ImGui::TextColored(ImVec4(0,0.7f,1,1), "Mode: CLIENT");
+        ImGui::TextColored(ImVec4(0,1,0,1), "Status : Connected");
+
+        ImGui::Separator();
+
+        _messagePanel.render();
+
+        ImGui::Separator();
+
+        _inputMessagePanel.render();
 
         ImGui::End();
     }
+
+private:
+    MessagePanel _messagePanel;
+    InputMessagePanel _inputMessagePanel;
 };
 
 }

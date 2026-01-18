@@ -9,8 +9,8 @@
 #include "network/SignalerServer.h"
 #include "utils.h"
 #include "ISession.h"
-#include "SessionThreaded.h"
 #include "message/NetMessage.h"
+#include "message/DCMessageManager.h"
 
 namespace otherside {
 
@@ -20,7 +20,7 @@ struct ClientConnection {
     ClientConnection(
         std::shared_ptr<rtc::PeerConnection> pc) : _peerConnection(pc) {};
 
-    std::shared_ptr<rtc::DataChannel> dataChannel;
+    std::unique_ptr<HostDCMessageManager> dcm;
     const std::shared_ptr<rtc::PeerConnection> _peerConnection;
 
     void disconnect() {
@@ -32,14 +32,21 @@ struct ClientConnection {
     // const std::shared_ptr<rtc::PeerConnection> _peerConnection;
 };
 
-class HostSession : public ISession, public SessionThreaded {
+class HostSession : public ISession, public ISessionControl {
     public:
-    HostSession(uint16_t port, UiMessageFeed* feed) : _uiMessages(feed) {
+    HostSession(
+        uint16_t port,
+        std::shared_ptr<UiMessageFeed> rxMessageFeed,
+        std::shared_ptr<UiMessageFeed> txMessageFeed
+    ) :
+    _rxMessageFeed(rxMessageFeed),
+    _txMessageFeed(txMessageFeed)
+    {
         _ss = std::make_unique<SignalerServer>(port);
         _config.iceServers.clear();
         rtc::InitLogger(rtc::LogLevel::Debug);
         _ss->onRequest = [this](uint32_t clientId) {
-            this->_clients.emplace(clientId, createPeerConnection(_config, clientId));
+            onRequestClb(clientId);
         };
 
         _ss->onReady = [this](uint32_t clientId, rtc::Description desc) {
@@ -51,94 +58,21 @@ class HostSession : public ISession, public SessionThreaded {
     }
     ~HostSession() { stop(); }
 
-    void start() override {
-        _log->msg("Start Signaler server");
+    void start() override;
+    void stop() override;
+    void update(float dt) override;
 
-        _ss->start();
-        _signaling_thread = std::thread([this]{ _ss->run(); });
-    }
-
-    void stop() override {
-        _ss->running = false;
-        _ss->stop();
-        if (_signaling_thread.joinable()) _signaling_thread.join();
-        SessionThreaded::stop();
-        for (auto const& [uid, pc] : _clients) {
-            pc->disconnect();
-        }
-    }
-
-    void update(float dt) override {}
-
-    std::string statusText() const override {
-        return "Hosting session";
-    }
+    void sendMessage(UiMessage msg) override;
 
     private:
-    void run() override {
-        while(_running) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-    }
+    void run() override;
 
-    void onRequestClb(uint32_t clientId) {
-        _clients.emplace(clientId, createPeerConnection(_config, clientId));
-    }
+    void onRequestClb(uint32_t clientId);
+    std::shared_ptr<ClientConnection> createClientConnection(const rtc::Configuration& _config, uint32_t clientId);
+    void createDataChannels(std::shared_ptr<ClientConnection> cc);
 
-    std::shared_ptr<ClientConnection> createPeerConnection(
-        const rtc::Configuration& _config,
-        uint32_t clientId
-    ) {
-        auto pc = std::make_shared<rtc::PeerConnection>(_config);
-        auto client = std::make_shared<ClientConnection>(pc);
-
-        pc->onStateChange([clientId, this](rtc::PeerConnection::State state) {
-            _log->msg(clientId, " - State : ", state);
-            if(state == rtc::PeerConnection::State::Connected) {
-                if (auto c = _clients.find(clientId); c != _clients.end()) {
-                    auto dc = c->second->dataChannel;
-                    dc->send("ok?");
-                }
-            }
-        });
-
-        pc->onGatheringStateChange([clientId, wpc = make_weak_ptr(pc), this](rtc::PeerConnection::GatheringState state){
-            _log->msg("Gathering State : ", state);
-            if (state == rtc::PeerConnection::GatheringState::Complete) {
-                if (auto pc = wpc.lock()) {
-                    auto description = pc->localDescription();
-                    qlexnet::Message<MsgType> msg;
-                    msg.header.id = MsgType::OFFER;
-                    qlexnet::MessageWriter mw(msg);
-                    mw.writeString(description->typeString());
-                    mw.writeString(description.value());
-                    _ss->messageClient(clientId, msg);
-                }
-            }
-        });
-
-        auto dc = pc->createDataChannel("ping-pong");
-
-        dc->onOpen([wdc = make_weak_ptr(dc)]() {
-            if (auto dc = wdc.lock()) {
-                dc->send("Ping");
-            }
-        });
-
-        dc->onMessage(nullptr, [this, wdc = make_weak_ptr(dc)](std::string msg){
-            _log->msg("onMessage : " + msg);
-            _uiMessages->push(UiMessage{"Client", msg});
-            if (auto dc = wdc.lock()) {
-                dc->send("Ping");
-            }
-        });
-
-        client->dataChannel = dc;
-        pc->createOffer();
-        return client;
-    }
-
-    UiMessageFeed* _uiMessages;
+    std::shared_ptr<UiMessageFeed> _rxMessageFeed;
+    std::shared_ptr<UiMessageFeed> _txMessageFeed;
 
     std::thread _signaling_thread;
     std::unique_ptr<SignalerServer> _ss;
@@ -146,7 +80,7 @@ class HostSession : public ISession, public SessionThreaded {
 
     std::unordered_map<uint32_t, std::shared_ptr<ClientConnection>> _clients;
 
-    std::unique_ptr<Logger> _log = std::make_unique<Logger>("Server");
+    std::unique_ptr<Logger> _log = std::make_unique<Logger>("HostSession");
 };
 
 }
