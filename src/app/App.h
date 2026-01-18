@@ -8,14 +8,12 @@
 #include "app/AppEvent.h"
 #include "app/AppState.h"
 #include "app/AppScreen.h"
-#include "message/NetMessage.h"
 #include "session/ISession.h"
 #include "session/HostSession.h"
 #include "session/ClientSession.h"
 
 namespace otherside {
 
-// template<typename T>
 class Application {
     using EventSink = std::function<void(AppEvent)>;
 

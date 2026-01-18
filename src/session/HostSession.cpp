@@ -51,17 +51,15 @@ void HostSession::onRequestClb(uint32_t clientId) {
 
 void HostSession::createDataChannels(std::shared_ptr<ClientConnection> cc) {
     cc->dcm->createChannel(DCMessageType::HEARTBEAT, true, true);
-    cc->dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const std::string& s){
-        _log->msg("Hearbeat received.");
-        _rxMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, "Client", s});
-        _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, "Host", "Ping"});
+    cc->dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const UiMessage& msg){
+        _rxMessageFeed->push(msg);
+        _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, PeerId::HOST, nowMs(), 0, "Ping"});
         return;
     });
 
     cc->dcm->createChannel(DCMessageType::MESSAGE, true, true);
-    cc->dcm->addOnMessageClb(DCMessageType::MESSAGE, [this](const std::string& s){
-        _log->msg("Msg received.");
-        _rxMessageFeed->push(UiMessage{DCMessageType::MESSAGE, "Client", s});
+    cc->dcm->addOnMessageClb(DCMessageType::MESSAGE, [this](const UiMessage& msg){
+        _rxMessageFeed->push(msg);
         return;
     });
 }
@@ -98,8 +96,8 @@ std::shared_ptr<ClientConnection> HostSession::createClientConnection(
 
 
 void HostSession::sendMessage(UiMessage msg) {
-    _log->msg("Sending a message.");
-    _clients.begin()->second->dcm->send(msg.type, msg.text);
+    auto bytes = serialize(msg);
+    _clients.begin()->second->dcm->sendBinary(msg.type, bytes);
 }
 
 }

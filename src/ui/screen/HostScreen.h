@@ -8,8 +8,8 @@ namespace otherside {
 
 class HostScreen : public IScreen {
 public:
-    HostScreen(EventSink sink, std::shared_ptr<IMessageFeed> rxFeed, std::shared_ptr<UiMessageFeed> txFeed) :
-    IScreen(sink), _messagePanel(rxFeed), _inputMessagePanel(txFeed)
+    HostScreen(EventSink sink, std::shared_ptr<IMessageFeed> rxFeed_, std::shared_ptr<UiMessageFeed> txFeed_) :
+    IScreen(sink), _messagePanel(PeerId::HOST, rxFeed_, txFeed_)
     {}
 
     void render() override {
@@ -22,16 +22,11 @@ public:
 
         _messagePanel.render();
 
-        ImGui::Separator();
-
-        _inputMessagePanel.render();
-
         ImGui::End();
     }
 
 private:
     MessagePanel _messagePanel;
-    InputMessagePanel _inputMessagePanel;
 };
 
 }

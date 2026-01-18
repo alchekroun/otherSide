@@ -9,7 +9,7 @@
 #include "network/SignalerServer.h"
 #include "utils.h"
 #include "ISession.h"
-#include "message/NetMessage.h"
+#include "message/NetMessageFeed.h"
 #include "message/DCMessageManager.h"
 
 namespace otherside {

@@ -35,14 +35,15 @@ void HostDCMessageManager::createChannel(DCMessageType type, bool reliable, bool
         _openChannels.erase(type);
     });
 
-    channel->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &msg) {
+    channel->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &rawMsg) {
         if (_msgClbByChannelType.count(type) == 0) return;
-        if (std::holds_alternative<rtc::string>(msg)) {
-            _msgClbByChannelType[type](std::get<std::string>(msg));
+        if (std::holds_alternative<rtc::string>(rawMsg)) {
+            _log->msg("Received string message. Prefer own protocol.");
+            _log->msg("Message content : ", std::get<std::string>(rawMsg));
         } else {
-            auto msgBytes = std::get<rtc::binary>(msg);
-            // auto data = std::string(msgBytes.begin(), msgBytes.end());
-            // _msgClbByChannelType[type](data);
+            auto msg = deserialize(std::get<rtc::binary>(rawMsg));
+            msg.receivedTs = nowMs();
+            _msgClbByChannelType[type](msg);
         }
     });
 
@@ -65,14 +66,15 @@ void ClientDCMessageManager::assignChannel(DCMessageType type, std::shared_ptr<r
         _openChannels.erase(type);
     });
 
-    dc->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &msg) {
+    dc->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &rawMsg) {
         if (_msgClbByChannelType.count(type) == 0) return;
-        if (std::holds_alternative<rtc::string>(msg)) {
-            _msgClbByChannelType[type](std::get<std::string>(msg));
+        if (std::holds_alternative<rtc::string>(rawMsg)) {
+            _log->msg("Received string message. Prefer own protocol.");
+            _log->msg("Message content : ", std::get<std::string>(rawMsg));
         } else {
-            auto msgBytes = std::get<rtc::binary>(msg);
-            // auto data = std::string(msgBytes.begin(), msgBytes.end());
-            // _msgClbByChannelType[type](data);
+            auto msg = deserialize(std::get<rtc::binary>(rawMsg));
+            msg.receivedTs = nowMs();
+            _msgClbByChannelType[type](msg);
         }
     });
 

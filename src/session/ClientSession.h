@@ -7,7 +7,8 @@
 
 #include "ISession.h"
 #include "network/SignalerClient.h"
-#include "message/NetMessage.h"
+#include "message/NetMessageFeed.h"
+#include "message/DCMessageManager.h"
 #include "logger/Logger.h"
 #include "utils.h"
 

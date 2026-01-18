@@ -1,5 +1,6 @@
 add_library(netMessage STATIC
     DCMessageManager.cpp
+    NetMessage.cpp
 )
 
 target_include_directories(app

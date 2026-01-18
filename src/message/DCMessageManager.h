@@ -3,16 +3,12 @@
 #include <rtc/rtc.hpp>
 #include <unordered_set>
 #include "logger/Logger.h"
+#include "NetMessage.h"
 
 namespace otherside {
 
-enum class DCMessageType {
-    HEARTBEAT,
-    MESSAGE
-};
-
 class DCMessageManager {
-    using MsgClb = std::function<void(const std::string&)>;
+    using MsgClb = std::function<void(const UiMessage&)>;
 public:
     void send(DCMessageType type, const std::string& message);
     void sendBinary(DCMessageType type, const std::vector<uint8_t>& data);

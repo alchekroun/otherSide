@@ -72,16 +72,16 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(rtc::De
         {
         case DCMessageType::HEARTBEAT:
             _dcm->assignChannel(DCMessageType::HEARTBEAT, dc);
-            _dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const std::string& s){
-                _rxMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, "Host", s});
-                _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, "Client", "Ping"});
+            _dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const UiMessage& msg){
+                _rxMessageFeed->push(msg);
+                _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, PeerId::CLIENT, nowMs(), 0, "Ping"});
                 return;
             });
             break;
         case DCMessageType::MESSAGE:
             _dcm->assignChannel(DCMessageType::MESSAGE, dc);
-            _dcm->addOnMessageClb(DCMessageType::MESSAGE, [this](const std::string& s){
-                _rxMessageFeed->push(UiMessage{DCMessageType::MESSAGE, "Host", s});
+            _dcm->addOnMessageClb(DCMessageType::MESSAGE, [this](const UiMessage& msg){
+                _rxMessageFeed->push(msg);
                 return;
             });
             break;
@@ -95,7 +95,8 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(rtc::De
 }
 
 void ClientSession::sendMessage(UiMessage msg) {
-    _dcm->send(msg.type, msg.text);
+    auto bytes = serialize(msg);
+    _dcm->sendBinary(msg.type, bytes);
 }
 
 }
