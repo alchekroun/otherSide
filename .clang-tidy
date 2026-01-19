@@ -1,0 +1,21 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  readability-*
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '^/Users/alexandre/dev/otherSide/src/'
+
+CheckOptions:
+  - key: readability-identifier-length.MinimumVariableNameLength
+    value: 2
+  - key: readability-identifier-length.MinimumParameterNameLength
+    value: 2
+  - key: readability-identifier-length.MinimumLoopCounterNameLength
+    value: 1
+  - key: readability-identifier-length.AllowedShortNames
+    value: 'i,j,k,fd,ev,io,ec'

@@ -7,6 +7,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(EXTERN_DIR "${CMAKE_SOURCE_DIR}/extern")
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 
+# clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_program(CLANG_TIDY_EXE
+    NAMES clang-tidy
+)
+
 # ASIO
 set(ASIO_INCLUDE_DIR "${EXTERN_DIR}/asio/include")
 
@@ -65,6 +72,18 @@ add_subdirectory(src/session)
 add_subdirectory(src/message)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
+
+if (CLANG_TIDY_EXE)
+    message(STATUS "clang-tidy found : ${CLANG_TIDY_EXE}")
+    set_target_properties(app PROPERTIES
+        CXX_CLANG_TIDY
+        "${CLANG_TIDY_EXE};
+        -warnings-as-errors=clang-analyzer-*;
+        -warnings-as-errors=bugprone-*;
+        -warnings-as-errors=performance-*;
+        -header-filter=^${SRC_DIR}/"
+    )
+endif()
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
