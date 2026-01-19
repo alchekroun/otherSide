@@ -9,8 +9,9 @@ namespace otherside
 class ClientScreen : public IScreen
 {
   public:
-    ClientScreen(EventSink sink, std::shared_ptr<IMessageFeed> rxFeed_, std::shared_ptr<UiMessageFeed> txFeed_)
-        : IScreen(sink), _messagePanel(PeerId::CLIENT, rxFeed_, txFeed_)
+    ClientScreen(EventSink sink, const std::shared_ptr<IMessageFeed> &rxFeed_,
+                 const std::shared_ptr<UiMessageFeed> &txFeed_)
+        : IScreen(std::move(sink)), _messagePanel(PeerId::CLIENT, rxFeed_, txFeed_)
     {
     }
 

@@ -13,11 +13,11 @@ class Logger
     {
     }
 
-    template <typename First, typename... Args> inline void msg(const First &v1, const Args &...v)
+    template <typename First, typename... Args> void msg(const First &v1, const Args &...v)
     {
         std::stringstream helper;
         buildStr(helper, v1, v...);
-        std::cout << "[" << _className << "]" << helper.str() << std::endl;
+        std::cout << "[" << _className << "]" << helper.str() << "\n";
     }
 
   private:

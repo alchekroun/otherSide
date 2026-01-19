@@ -30,7 +30,7 @@ void ClientSession::update(float dt)
     while (!_txMessageFeed->empty())
     {
         auto msgs = _txMessageFeed->consume();
-        for (auto msg : msgs)
+        for (const auto &msg : msgs)
         {
             sendMessage(msg);
         }
@@ -47,13 +47,13 @@ void ClientSession::run()
     }
 }
 
-void ClientSession::onOfferClb(rtc::Description offer)
+void ClientSession::onOfferClb(const rtc::Description &offer)
 {
     _pc = createPeerConnection(offer);
     _dcm = std::make_unique<ClientDCMessageManager>(_pc);
 }
 
-std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(rtc::Description offer)
+std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(const rtc::Description &offer)
 {
     rtc::Configuration config;
     config.iceServers.clear();
@@ -78,9 +78,9 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(rtc::De
         }
     });
 
-    pc->onTrack([this](std::shared_ptr<rtc::Track> tr) { _log->msg("onTrack"); });
+    pc->onTrack([this](const std::shared_ptr<rtc::Track> &tr) { _log->msg("onTrack"); });
 
-    pc->onDataChannel([this](std::shared_ptr<rtc::DataChannel> dc) {
+    pc->onDataChannel([this](const std::shared_ptr<rtc::DataChannel> &dc) {
         _log->msg("Data Channel (", dc->label(), ") received.");
         switch (_dcm->labelToType[dc->label()])
         {
@@ -108,7 +108,7 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(rtc::De
     return pc;
 }
 
-void ClientSession::sendMessage(UiMessage msg)
+void ClientSession::sendMessage(const UiMessage &msg)
 {
     auto bytes = serialize(msg);
     _dcm->sendBinary(msg.type, bytes);

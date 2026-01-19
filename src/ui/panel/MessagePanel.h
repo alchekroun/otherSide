@@ -13,12 +13,12 @@ namespace otherside
 class DisplayMesssageFeed
 {
   public:
-    DisplayMesssageFeed(std::shared_ptr<IMessageFeed> rxFeed_, std::shared_ptr<UiMessageFeed> txFeed_)
+    DisplayMesssageFeed(const std::shared_ptr<IMessageFeed> &rxFeed_, const std::shared_ptr<UiMessageFeed> &txFeed_)
         : _rxFeed(rxFeed_), _txFeed(txFeed_)
     {
     }
 
-    void pushMessage(UiMessage msg)
+    void pushMessage(const UiMessage &msg)
     {
         _txFeed->push(msg);
         _messages.push_back(msg);
@@ -47,13 +47,14 @@ class DisplayMesssageFeed
 class InputMessagePanel : public IPanel
 {
   public:
-    explicit InputMessagePanel(PeerId source, std::shared_ptr<DisplayMesssageFeed> feed) : _feed(feed), _source(source)
+    explicit InputMessagePanel(PeerId source, const std::shared_ptr<DisplayMesssageFeed> &feed)
+        : _feed(feed), _source(source)
     {
     }
 
     void render() override
     {
-        ImGui::BeginChild("InputPanel", ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 2), false);
+        ImGui::BeginChild("InputPanel", ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 2), 0);
 
         // ImGui::SetNextItemWidth(-ImGui::GetFrameHeightWithSpacing() * 2);
         ImGui::InputText("Message", _messageBuf, sizeof(_messageBuf));
@@ -72,7 +73,9 @@ class InputMessagePanel : public IPanel
     void sendMessage()
     {
         if (_messageBuf[0] == '\0')
+        {
             return;
+        }
         _feed->pushMessage(UiMessage{DCMessageType::MESSAGE, _source, nowMs(), 0, _messageBuf});
         _messageBuf[0] = '\0';
     }
@@ -85,7 +88,7 @@ class InputMessagePanel : public IPanel
 class DisplayedMessagePanel : public IPanel
 {
   public:
-    explicit DisplayedMessagePanel(PeerId source, std::shared_ptr<DisplayMesssageFeed> feed)
+    explicit DisplayedMessagePanel(PeerId source, const std::shared_ptr<DisplayMesssageFeed> &feed)
         : _feed(feed), _source(source)
     {
     }
@@ -95,7 +98,7 @@ class DisplayedMessagePanel : public IPanel
         float inputHeight = ImGui::GetFrameHeightWithSpacing() * 2.5f;
         auto avail = ImGui::GetContentRegionAvail();
 
-        ImGui::BeginChild("DisplayedMessagePanel", ImVec2(0, avail.y - inputHeight), true,
+        ImGui::BeginChild("DisplayedMessagePanel", ImVec2(0, avail.y - inputHeight), 0,
                           ImGuiWindowFlags_HorizontalScrollbar);
 
         for (const auto &msg : _feed->getMessages())
@@ -125,7 +128,7 @@ class DisplayedMessagePanel : public IPanel
   private:
     static std::string formatTime(TimestampMs ts)
     {
-        std::time_t t = ts / 1000;
+        std::time_t t = static_cast<std::time_t>(ts) / 1000;
         std::tm tm{};
         localtime_r(&t, &tm);
         char buf[9];
@@ -141,7 +144,8 @@ class DisplayedMessagePanel : public IPanel
 class MessagePanel : public IPanel
 {
   public:
-    MessagePanel(PeerId source, std::shared_ptr<IMessageFeed> rxFeed_, std::shared_ptr<UiMessageFeed> txFeed_)
+    MessagePanel(PeerId source, const std::shared_ptr<IMessageFeed> &rxFeed_,
+                 const std::shared_ptr<UiMessageFeed> &txFeed_)
         : _displayedMessageFeed(std::make_shared<DisplayMesssageFeed>(rxFeed_, txFeed_)),
           _displayedMessagePanel(source, _displayedMessageFeed), _inputMessagePanel(source, _displayedMessageFeed) {};
 

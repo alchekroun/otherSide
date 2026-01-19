@@ -3,12 +3,12 @@
 namespace otherside
 {
 
-enum class AppScreen
+enum class AppScreen : std::uint8_t
 {
-    IdleScreen,
-    RoleSelectionScreen,
-    HostScreen,
-    ClientScreen
+    IDLE,
+    ROLE_SELECTION,
+    HOST,
+    CLIENT
 };
 
 } // namespace otherside

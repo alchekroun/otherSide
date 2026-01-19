@@ -13,7 +13,7 @@ void Application::update()
 
 void Application::pushEvent(AppEvent ev)
 {
-    std::lock_guard<std::mutex> lock(_eventMutex);
+    std::scoped_lock<std::mutex> lock(_eventMutex);
     _eventQueue.push(ev);
 }
 
@@ -21,15 +21,15 @@ void Application::handleEvent(AppEvent ev)
 {
     switch (ev)
     {
-    case AppEvent::StartHost:
+    case AppEvent::START_HOST:
         _log->msg("Switching to HOST mode");
-        setState(AppState::StartingHost);
-        _gui->setScreen(AppScreen::HostScreen);
+        setState(AppState::STARTING_HOST);
+        _gui->setScreen(AppScreen::HOST);
         break;
-    case AppEvent::StartClient:
+    case AppEvent::START_CLIENT:
         _log->msg("Switching to Client mode");
-        setState(AppState::StartingClient);
-        _gui->setScreen(AppScreen::ClientScreen);
+        setState(AppState::STARTING_CLIENT);
+        _gui->setScreen(AppScreen::CLIENT);
         break;
     default:
         break;
@@ -39,16 +39,14 @@ void Application::handleEvent(AppEvent ev)
 void Application::start()
 {
     SetConfigFlags(FLAG_WINDOW_HIGHDPI);
-    InitWindow(_WINDOW_HEIGHT, _WINDOW_WIDTH, _WINDOW_HEADER_TEXT.c_str());
+    InitWindow(_window_width, _window_height, _window_header_text.c_str());
     SetWindowState(FLAG_VSYNC_HINT);
 
-    _gui->setScreen(AppScreen::IdleScreen);
+    _gui->setScreen(AppScreen::IDLE);
     _gui->start();
 
     while (!WindowShouldClose())
     {
-        float deltaTime = GetFrameTime();
-
         // IO SOMEHOW ?
 
         // Update
@@ -83,7 +81,7 @@ void Application::stop()
 
 std::optional<AppEvent> Application::popEvent()
 {
-    std::lock_guard<std::mutex> lock(_eventMutex);
+    std::scoped_lock<std::mutex> lock(_eventMutex);
     if (_eventQueue.empty())
     {
         return std::nullopt;
@@ -98,17 +96,17 @@ void Application::initHostMode()
 {
     _session = std::make_unique<HostSession>(8000, _rxMessagesFeed, _txMessageFeed);
     _session->start();
-    _gui->registerScreen<HostScreen>(AppScreen::HostScreen, _rxMessagesFeed, _txMessageFeed);
+    _gui->registerScreen<HostScreen>(AppScreen::HOST, _rxMessagesFeed, _txMessageFeed);
 
-    setState(AppState::Hosting);
+    setState(AppState::HOSTING);
 }
 void Application::initClientMode()
 {
     _session = std::make_unique<ClientSession>("127.0.0.1", 8000, _rxMessagesFeed, _txMessageFeed);
     _session->start();
-    _gui->registerScreen<ClientScreen>(AppScreen::ClientScreen, _rxMessagesFeed, _txMessageFeed);
+    _gui->registerScreen<ClientScreen>(AppScreen::CLIENT, _rxMessagesFeed, _txMessageFeed);
 
-    setState(AppState::Connected);
+    setState(AppState::CONNECTED);
 }
 
 void Application::setState(AppState newState)
@@ -122,15 +120,15 @@ void Application::setState(AppState newState)
 
     switch (newState)
     {
-    case AppState::StartingHost:
+    case AppState::STARTING_HOST:
         _log->msg("Switching to HOST mode");
         initHostMode();
         break;
-    case AppState::StartingClient:
+    case AppState::STARTING_CLIENT:
         _log->msg("Switching to Client mode");
         initClientMode();
         break;
-    case AppState::ShuttingDown:
+    case AppState::SHUTTING_DOWN:
         _log->msg("Shutting down");
         stop();
     default:

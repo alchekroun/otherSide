@@ -3,7 +3,7 @@
 namespace otherside
 {
 
-enum class DCMessageType
+enum class DCMessageType : std::uint8_t
 {
     HEARTBEAT,
     MESSAGE

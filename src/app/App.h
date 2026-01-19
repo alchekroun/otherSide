@@ -24,8 +24,8 @@ class Application
         : _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
           _rxMessagesFeed(std::make_unique<UiMessageFeed>()), _txMessageFeed(std::make_unique<UiMessageFeed>())
     {
-        _gui->registerScreen<RoleSelectionScreen>(AppScreen::RoleSelectionScreen);
-        _gui->registerScreen<IdleScreen>(AppScreen::IdleScreen);
+        _gui->registerScreen<RoleSelectionScreen>(AppScreen::ROLE_SELECTION);
+        _gui->registerScreen<IdleScreen>(AppScreen::IDLE);
     }
     ~Application()
     {
@@ -54,13 +54,13 @@ class Application
     std::queue<AppEvent> _eventQueue;
     std::mutex _eventMutex;
 
-    AppState _state = AppState::Boot;
+    AppState _state = AppState::BOOT;
 
     std::thread _mainThread;
-    inline static int _FPS = 24;
-    inline static int _WINDOW_HEIGHT = 800;
-    inline static int _WINDOW_WIDTH = 600;
-    inline static std::string _WINDOW_HEADER_TEXT = "otherSide - test zone";
+    inline static int _fps = 24;
+    inline static int _window_height = 800;
+    inline static int _window_width = 600;
+    inline static std::string _window_header_text = "otherSide - test zone";
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("App");
 };
 

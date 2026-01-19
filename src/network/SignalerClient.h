@@ -14,8 +14,7 @@ namespace otherside
 class SignalerClient : public qlexnet::ClientInterface<MsgType>
 {
   public:
-    SignalerClient(const std::string &hostIp, uint16_t port)
-        : qlexnet::ClientInterface<MsgType>(), port(port), hostIp(hostIp)
+    SignalerClient(const std::string &hostIp, uint16_t port) : port(port), hostIp(hostIp)
     {
     }
 

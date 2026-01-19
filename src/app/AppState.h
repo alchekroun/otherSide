@@ -3,15 +3,15 @@
 namespace otherside
 {
 
-enum class AppState
+enum class AppState : std::uint8_t
 {
-    Boot,
-    Idle, // UI shown, no session
-    StartingHost,
-    StartingClient,
-    Hosting,
-    Connected,
-    ShuttingDown
+    BOOT,
+    IDLE, // UI shown, no session
+    STARTING_HOST,
+    STARTING_CLIENT,
+    HOSTING,
+    CONNECTED,
+    SHUTTING_DOWN
 };
 
 } // namespace otherside

@@ -18,14 +18,14 @@ class DCMessageManager
 
     void addOnMessageClb(DCMessageType type, MsgClb callback)
     {
-        _msgClbByChannelType[type] = callback;
+        _msgClbByChannelType[type] = std::move(callback);
     }
 
     std::unordered_map<std::string, DCMessageType> labelToType = {{"Heartbeat", DCMessageType::HEARTBEAT},
                                                                   {"Message", DCMessageType::MESSAGE}};
 
   protected:
-    DCMessageManager(std::shared_ptr<rtc::PeerConnection> pc_) : _pc(pc_)
+    DCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : _pc(pc_)
     {
     }
 
@@ -41,7 +41,7 @@ class DCMessageManager
 class HostDCMessageManager : public DCMessageManager
 {
   public:
-    HostDCMessageManager(std::shared_ptr<rtc::PeerConnection> pc_) : DCMessageManager(pc_)
+    HostDCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : DCMessageManager(pc_)
     {
     }
 
@@ -54,7 +54,7 @@ class HostDCMessageManager : public DCMessageManager
 class ClientDCMessageManager : public DCMessageManager
 {
   public:
-    ClientDCMessageManager(std::shared_ptr<rtc::PeerConnection> pc_) : DCMessageManager(pc_)
+    ClientDCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : DCMessageManager(pc_)
     {
     }
 

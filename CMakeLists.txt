@@ -77,11 +77,11 @@ if (CLANG_TIDY_EXE)
     message(STATUS "clang-tidy found : ${CLANG_TIDY_EXE}")
     set_target_properties(app PROPERTIES
         CXX_CLANG_TIDY
-        "${CLANG_TIDY_EXE};
+        ${CLANG_TIDY_EXE};
         -warnings-as-errors=clang-analyzer-*;
         -warnings-as-errors=bugprone-*;
         -warnings-as-errors=performance-*;
-        -header-filter=^${SRC_DIR}/"
+        -header-filter=^${SRC_DIR}/
     )
 endif()
 

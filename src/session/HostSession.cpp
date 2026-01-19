@@ -43,7 +43,7 @@ void HostSession::update(float dt)
     {
         auto msgs = _txMessageFeed->consume();
         _log->msg("About to send ", msgs.size(), " messages.");
-        for (auto msg : msgs)
+        for (const auto &msg : msgs)
         {
             sendMessage(msg);
         }
@@ -60,7 +60,7 @@ void HostSession::onRequestClb(uint32_t clientId)
     _clients.emplace(clientId, cc);
 }
 
-void HostSession::createDataChannels(std::shared_ptr<ClientConnection> cc)
+void HostSession::createDataChannels(const std::shared_ptr<ClientConnection> &cc)
 {
     cc->dcm->createChannel(DCMessageType::HEARTBEAT, true, true);
     cc->dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const UiMessage &msg) {
@@ -106,7 +106,7 @@ std::shared_ptr<ClientConnection> HostSession::createClientConnection(const rtc:
     return client;
 }
 
-void HostSession::sendMessage(UiMessage msg)
+void HostSession::sendMessage(const UiMessage &msg)
 {
     auto bytes = serialize(msg);
     _clients.begin()->second->dcm->sendBinary(msg.type, bytes);

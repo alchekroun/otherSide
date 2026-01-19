@@ -29,7 +29,9 @@ class SessionThreaded
     {
         _running = false;
         if (_thread.joinable())
+        {
             _thread.join();
+        }
     }
 
   protected:
@@ -39,8 +41,6 @@ class SessionThreaded
 class ISession : public SessionThreaded
 {
   public:
-    virtual ~ISession() = default;
-
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual void update(float dt) = 0;
@@ -49,9 +49,7 @@ class ISession : public SessionThreaded
 class ISessionControl
 {
   public:
-    virtual void sendMessage(UiMessage msg) = 0;
-    // virtual void ping() = 0;
-    // virtual void sendText(std::string_view) = 0;
+    virtual void sendMessage(const UiMessage &msg) = 0;
 };
 
 } // namespace otherside

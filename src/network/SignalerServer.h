@@ -18,7 +18,8 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
     SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port), running(true)
     {
     }
-    ~SignalerServer()
+
+    ~SignalerServer() override
     {
         running = false;
         stop();
@@ -38,7 +39,7 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
     std::atomic<bool> running{false};
 
   protected:
-    virtual bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+    bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
     {
         qlexnet::Message<MsgType> msg;
         msg.header.id = MsgType::ACK_CONNECTION;
@@ -46,13 +47,12 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
         return true;
     }
 
-    virtual void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+    void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
     {
         _log->msg("Client disconnected");
     }
 
-    virtual void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_,
-                           qlexnet::Message<MsgType> &msg_) override
+    void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_, qlexnet::Message<MsgType> &msg_) override
     {
         switch (msg_.header.id)
         {

@@ -21,13 +21,13 @@ class UiMessageFeed final : public IMessageFeed
   public:
     void push(UiMessage msg)
     {
-        std::lock_guard lock(_mtx);
+        std::scoped_lock lock(_mtx);
         _buffer.push_back(std::move(msg));
     }
 
     std::vector<UiMessage> consume() override
     {
-        std::lock_guard lock(_mtx);
+        std::scoped_lock lock(_mtx);
         auto out = std::move(_buffer);
         _buffer.clear();
         return out;
@@ -35,7 +35,7 @@ class UiMessageFeed final : public IMessageFeed
 
     bool empty() override
     {
-        std::lock_guard lock(_mtx);
+        std::scoped_lock lock(_mtx);
         return _buffer.empty();
     }
 

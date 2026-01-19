@@ -29,7 +29,7 @@ class ScreenRouter
     {
         IMGUI_CHECKVERSION();
         rlImGuiSetup(false);
-        setScreen(AppScreen::RoleSelectionScreen);
+        setScreen(AppScreen::ROLE_SELECTION);
     };
 
     void stop()
@@ -50,8 +50,10 @@ class ScreenRouter
     void render()
     {
         rlImGuiBegin();
-        if (_screens.count(_current))
+        if (_screens.contains(_current))
+        {
             _screens[_current]->render();
+        }
         rlImGuiEnd();
     }
 

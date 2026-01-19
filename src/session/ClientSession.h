@@ -18,12 +18,12 @@ namespace otherside
 class ClientSession : public ISession, public ISessionControl
 {
   public:
-    ClientSession(const std::string &ip_addr, uint16_t port, std::shared_ptr<UiMessageFeed> rxMessageFeed,
-                  std::shared_ptr<UiMessageFeed> txMessageFeed)
+    ClientSession(const std::string &ip_addr, uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
+                  const std::shared_ptr<UiMessageFeed> &txMessageFeed)
         : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
     {
         _sc = std::make_unique<SignalerClient>(ip_addr, port);
-        _sc->onOffer = [this](rtc::Description offer) { onOfferClb(offer); };
+        _sc->onOffer = [this](const rtc::Description &offer) { onOfferClb(offer); };
     }
     ~ClientSession() override
     {
@@ -35,12 +35,12 @@ class ClientSession : public ISession, public ISessionControl
     void update(float dt) override;
 
     // void sendText(std::string_view) override;
-    void sendMessage(UiMessage msg) override;
+    void sendMessage(const UiMessage &msg) override;
 
   private:
     void run() override;
-    void onOfferClb(rtc::Description offer);
-    std::shared_ptr<rtc::PeerConnection> createPeerConnection(rtc::Description offer);
+    void onOfferClb(const rtc::Description &offer);
+    std::shared_ptr<rtc::PeerConnection> createPeerConnection(const rtc::Description &offer);
 
     void sendAnswer()
     {

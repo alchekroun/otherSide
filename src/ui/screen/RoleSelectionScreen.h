@@ -9,7 +9,7 @@ namespace otherside
 class RoleSelectionScreen : public IScreen
 {
   public:
-    RoleSelectionScreen(EventSink sink) : IScreen(sink)
+    RoleSelectionScreen(EventSink sink) : IScreen(std::move(sink))
     {
     }
 
@@ -21,14 +21,14 @@ class RoleSelectionScreen : public IScreen
 
         if (ImGui::Button("Host"))
         {
-            _eventSink(AppEvent::StartHost);
+            _eventSink(AppEvent::START_HOST);
         }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Client"))
         {
-            _eventSink(AppEvent::StartClient);
+            _eventSink(AppEvent::START_CLIENT);
         }
 
         ImGui::End();

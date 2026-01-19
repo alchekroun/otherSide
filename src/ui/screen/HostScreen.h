@@ -10,8 +10,9 @@ namespace otherside
 class HostScreen : public IScreen
 {
   public:
-    HostScreen(EventSink sink, std::shared_ptr<IMessageFeed> rxFeed_, std::shared_ptr<UiMessageFeed> txFeed_)
-        : IScreen(sink), _messagePanel(PeerId::HOST, rxFeed_, txFeed_)
+    HostScreen(EventSink sink, const std::shared_ptr<IMessageFeed> &rxFeed_,
+               const std::shared_ptr<UiMessageFeed> &txFeed_)
+        : IScreen(std::move(sink)), _messagePanel(PeerId::HOST, rxFeed_, txFeed_)
     {
     }
 

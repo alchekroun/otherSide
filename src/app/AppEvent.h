@@ -3,11 +3,11 @@
 namespace otherside
 {
 
-enum class AppEvent
+enum class AppEvent : std::uint8_t
 {
-    None,
-    StartHost,
-    StartClient
+    NONE,
+    START_HOST,
+    START_CLIENT
 };
 
 } // namespace otherside

@@ -19,7 +19,7 @@ namespace otherside
 
 struct ClientConnection
 {
-    ClientConnection(std::shared_ptr<rtc::PeerConnection> pc) : _peerConnection(pc) {};
+    ClientConnection(const std::shared_ptr<rtc::PeerConnection> &pc) : _peerConnection(pc) {};
 
     std::unique_ptr<HostDCMessageManager> dcm;
     const std::shared_ptr<rtc::PeerConnection> _peerConnection;
@@ -37,8 +37,8 @@ struct ClientConnection
 class HostSession : public ISession, public ISessionControl
 {
   public:
-    HostSession(uint16_t port, std::shared_ptr<UiMessageFeed> rxMessageFeed,
-                std::shared_ptr<UiMessageFeed> txMessageFeed)
+    HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
+                const std::shared_ptr<UiMessageFeed> &txMessageFeed)
         : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
     {
         _ss = std::make_unique<SignalerServer>(port);
@@ -46,7 +46,7 @@ class HostSession : public ISession, public ISessionControl
         rtc::InitLogger(rtc::LogLevel::Debug);
         _ss->onRequest = [this](uint32_t clientId) { onRequestClb(clientId); };
 
-        _ss->onReady = [this](uint32_t clientId, rtc::Description desc) {
+        _ss->onReady = [this](uint32_t clientId, const rtc::Description &desc) {
             if (auto c = _clients.find(clientId); c != _clients.end())
             {
                 auto pc = c->second->_peerConnection;
@@ -54,7 +54,7 @@ class HostSession : public ISession, public ISessionControl
             }
         };
     }
-    ~HostSession()
+    ~HostSession() override
     {
         stop();
     }
@@ -63,14 +63,14 @@ class HostSession : public ISession, public ISessionControl
     void stop() override;
     void update(float dt) override;
 
-    void sendMessage(UiMessage msg) override;
+    void sendMessage(const UiMessage &msg) override;
 
   private:
     void run() override;
 
     void onRequestClb(uint32_t clientId);
     std::shared_ptr<ClientConnection> createClientConnection(const rtc::Configuration &_config, uint32_t clientId);
-    void createDataChannels(std::shared_ptr<ClientConnection> cc);
+    void createDataChannels(const std::shared_ptr<ClientConnection> &cc);
 
     std::shared_ptr<UiMessageFeed> _rxMessageFeed;
     std::shared_ptr<UiMessageFeed> _txMessageFeed;

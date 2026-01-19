@@ -8,7 +8,7 @@
 namespace otherside
 {
 
-enum class PeerId
+enum class PeerId : std::uint8_t
 {
     HOST,
     CLIENT
