@@ -1,10 +1,12 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
-enum class DCMessageType {
+enum class DCMessageType
+{
     HEARTBEAT,
     MESSAGE
 };
 
-}
+} // namespace otherside

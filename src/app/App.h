@@ -3,30 +3,34 @@
 #include <memory>
 #include <thread>
 
-#include "logger/Logger.h"
-#include "ui/ScreenRouter.h"
 #include "app/AppEvent.h"
-#include "app/AppState.h"
 #include "app/AppScreen.h"
-#include "session/ISession.h"
-#include "session/HostSession.h"
+#include "app/AppState.h"
+#include "logger/Logger.h"
 #include "session/ClientSession.h"
+#include "session/HostSession.h"
+#include "session/ISession.h"
+#include "ui/ScreenRouter.h"
 
-namespace otherside {
+namespace otherside
+{
 
-class Application {
+class Application
+{
     using EventSink = std::function<void(AppEvent)>;
 
-    public:
-    Application() :
-        _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
-        _rxMessagesFeed(std::make_unique<UiMessageFeed>()),
-        _txMessageFeed(std::make_unique<UiMessageFeed>())
+  public:
+    Application()
+        : _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
+          _rxMessagesFeed(std::make_unique<UiMessageFeed>()), _txMessageFeed(std::make_unique<UiMessageFeed>())
     {
         _gui->registerScreen<RoleSelectionScreen>(AppScreen::RoleSelectionScreen);
         _gui->registerScreen<IdleScreen>(AppScreen::IdleScreen);
     }
-    ~Application() { stop(); }
+    ~Application()
+    {
+        stop();
+    }
 
     void pushEvent(AppEvent ev);
     void handleEvent(AppEvent ev);
@@ -35,7 +39,7 @@ class Application {
     void start();
     void stop();
 
-    private:
+  private:
     void initHostMode();
     void initClientMode();
 
@@ -60,4 +64,4 @@ class Application {
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("App");
 };
 
-}
+} // namespace otherside

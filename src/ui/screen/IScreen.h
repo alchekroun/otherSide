@@ -1,20 +1,24 @@
 #pragma once
-#include <functional>
 #include "app/AppEvent.h"
+#include <functional>
 
-namespace otherside {
+namespace otherside
+{
 
-class IScreen {
-public:
+class IScreen
+{
+  public:
     using EventSink = std::function<void(AppEvent)>;
 
-    explicit IScreen(EventSink sink) : _eventSink(std::move(sink)) {}
+    explicit IScreen(EventSink sink) : _eventSink(std::move(sink))
+    {
+    }
     virtual ~IScreen() = default;
 
     virtual void render() = 0;
 
-protected:
+  protected:
     EventSink _eventSink;
 };
 
-}
+} // namespace otherside

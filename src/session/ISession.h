@@ -4,35 +4,41 @@
 
 #include "message/NetMessage.h"
 
-namespace otherside {
+namespace otherside
+{
 
-class SessionThreaded {
-protected:
+class SessionThreaded
+{
+  protected:
     std::thread _thread;
     std::atomic<bool> _running{false};
 
-public:
-    virtual ~SessionThreaded() {
+  public:
+    virtual ~SessionThreaded()
+    {
         stop();
     }
 
-    void startThread() {
+    void startThread()
+    {
         _running = true;
         _thread = std::thread([this]() { run(); });
     }
 
-    void stop() {
+    void stop()
+    {
         _running = false;
         if (_thread.joinable())
             _thread.join();
     }
 
-protected:
+  protected:
     virtual void run() = 0;
 };
 
-class ISession : public SessionThreaded {
-public:
+class ISession : public SessionThreaded
+{
+  public:
     virtual ~ISession() = default;
 
     virtual void start() = 0;
@@ -40,11 +46,12 @@ public:
     virtual void update(float dt) = 0;
 };
 
-class ISessionControl {
-public:
+class ISessionControl
+{
+  public:
     virtual void sendMessage(UiMessage msg) = 0;
     // virtual void ping() = 0;
     // virtual void sendText(std::string_view) = 0;
 };
 
-}
+} // namespace otherside

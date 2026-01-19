@@ -1,6 +1,7 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
 enum class MsgType : std::uint32_t
 {
@@ -12,4 +13,4 @@ enum class MsgType : std::uint32_t
     ANSWER
 };
 
-}
+} // namespace otherside

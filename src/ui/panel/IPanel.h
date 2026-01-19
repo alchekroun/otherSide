@@ -1,12 +1,14 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
-class IPanel {
-public:
+class IPanel
+{
+  public:
     virtual ~IPanel() = default;
 
     virtual void render() = 0;
 };
 
-}
+} // namespace otherside

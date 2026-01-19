@@ -3,24 +3,31 @@
 #include "IScreen.h"
 #include <imgui.h>
 
-namespace otherside {
+namespace otherside
+{
 
-class RoleSelectionScreen : public IScreen {
-public:
-    RoleSelectionScreen(EventSink sink) : IScreen(sink) {}
+class RoleSelectionScreen : public IScreen
+{
+  public:
+    RoleSelectionScreen(EventSink sink) : IScreen(sink)
+    {
+    }
 
-    void render() override {
+    void render() override
+    {
         ImGui::Begin("OtherSide");
 
         ImGui::Text("Choose your role:");
 
-        if (ImGui::Button("Host")) {
+        if (ImGui::Button("Host"))
+        {
             _eventSink(AppEvent::StartHost);
         }
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Client")) {
+        if (ImGui::Button("Client"))
+        {
             _eventSink(AppEvent::StartClient);
         }
 
@@ -28,4 +35,4 @@ public:
     }
 };
 
-}
+} // namespace otherside

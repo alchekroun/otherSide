@@ -1,22 +1,25 @@
 #pragma once
 
-#include <rtc/rtc.hpp>
-#include <qlexnet.h>
 #include <memory>
+#include <qlexnet.h>
+#include <rtc/rtc.hpp>
 #include <string>
 
-#include "logger/Logger.h"
 #include "SignalerMessageType.h"
-
+#include "logger/Logger.h"
 
 namespace otherside
 {
 using asio::ip::tcp;
 
-class SignalerServer : public qlexnet::ServerInterface<MsgType> {
-    public:
-    SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port), running(true) {}
-    ~SignalerServer() {
+class SignalerServer : public qlexnet::ServerInterface<MsgType>
+{
+  public:
+    SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port), running(true)
+    {
+    }
+    ~SignalerServer()
+    {
         running = false;
         stop();
     }
@@ -24,31 +27,36 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType> {
     std::function<void(uint32_t)> onRequest;
     std::function<void(uint32_t, rtc::Description)> onReady;
 
-    void run() {
-        while (running) {
+    void run()
+    {
+        while (running)
+        {
             update(-1, true);
         }
     }
 
     std::atomic<bool> running{false};
 
-    protected:
-    virtual bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override {
+  protected:
+    virtual bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+    {
         qlexnet::Message<MsgType> msg;
         msg.header.id = MsgType::ACK_CONNECTION;
         client_->send(msg);
         return true;
     }
 
-    virtual void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override {
+    virtual void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+    {
         _log->msg("Client disconnected");
     }
 
-    virtual void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_, qlexnet::Message<MsgType> &msg_) override {
+    virtual void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_,
+                           qlexnet::Message<MsgType> &msg_) override
+    {
         switch (msg_.header.id)
         {
-        case MsgType::PING:
-        {
+        case MsgType::PING: {
             qlexnet::MessageReader mr(msg_);
             std::chrono::steady_clock::time_point start;
             auto ok = mr.readString();
@@ -62,13 +70,11 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType> {
             client_->send(msg);
             break;
         }
-        case MsgType::REQUEST:
-        {
+        case MsgType::REQUEST: {
             onRequest(client_->GetID());
             break;
         }
-        case MsgType::READY:
-        {
+        case MsgType::READY: {
             qlexnet::MessageReader mr(msg_);
             auto type = mr.readString();
             auto sdp = mr.readString();
@@ -81,8 +87,8 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType> {
         }
     }
 
-    private:
+  private:
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("SignalerServer");
 };
 
-}
+} // namespace otherside

@@ -1,10 +1,12 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
-enum class AppState {
+enum class AppState
+{
     Boot,
-    Idle,        // UI shown, no session
+    Idle, // UI shown, no session
     StartingHost,
     StartingClient,
     Hosting,
@@ -12,4 +14,4 @@ enum class AppState {
     ShuttingDown
 };
 
-}
+} // namespace otherside

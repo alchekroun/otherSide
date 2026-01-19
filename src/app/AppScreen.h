@@ -1,12 +1,14 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
-enum class AppScreen {
+enum class AppScreen
+{
     IdleScreen,
     RoleSelectionScreen,
     HostScreen,
     ClientScreen
 };
 
-}
+} // namespace otherside

@@ -5,16 +5,19 @@
 
 #include "DCMessageType.h"
 
-namespace otherside {
+namespace otherside
+{
 
-enum class PeerId {
+enum class PeerId
+{
     HOST,
     CLIENT
 };
 
 using TimestampMs = uint64_t;
 
-struct UiMessage {
+struct UiMessage
+{
     DCMessageType type;
     PeerId from;
     TimestampMs createdTs;
@@ -23,7 +26,7 @@ struct UiMessage {
 };
 
 TimestampMs nowMs();
-std::vector<uint8_t> serialize(const UiMessage& msg);
-UiMessage deserialize(const std::vector<std::byte>& buf);
+std::vector<uint8_t> serialize(const UiMessage &msg);
+UiMessage deserialize(const std::vector<std::byte> &buf);
 
-}
+} // namespace otherside

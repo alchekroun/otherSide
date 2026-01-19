@@ -3,17 +3,18 @@
 namespace otherside
 {
 
-TimestampMs nowMs() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()
-    ).count();
+TimestampMs nowMs()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 
-std::vector<uint8_t> serialize(const UiMessage& msg) {
+std::vector<uint8_t> serialize(const UiMessage &msg)
+{
     std::vector<uint8_t> buf;
 
     auto push = [&](auto value) {
-        uint8_t* p = reinterpret_cast<uint8_t*>(&value);
+        uint8_t *p = reinterpret_cast<uint8_t *>(&value);
         buf.insert(buf.end(), p, p + sizeof(value));
     };
 
@@ -29,10 +30,11 @@ std::vector<uint8_t> serialize(const UiMessage& msg) {
     return buf;
 }
 
-UiMessage deserialize(const std::vector<std::byte>& buf) {
+UiMessage deserialize(const std::vector<std::byte> &buf)
+{
     size_t offset = 0;
 
-    auto read = [&](auto& value) {
+    auto read = [&](auto &value) {
         std::memcpy(&value, buf.data() + offset, sizeof(value));
         offset += sizeof(value);
     };
@@ -46,12 +48,9 @@ UiMessage deserialize(const std::vector<std::byte>& buf) {
     uint32_t len;
     read(len);
 
-    msg.text.assign(
-        reinterpret_cast<const char*>(buf.data() + offset),
-        len
-    );
+    msg.text.assign(reinterpret_cast<const char *>(buf.data() + offset), len);
 
     return msg;
 }
 
-}
+} // namespace otherside

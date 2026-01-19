@@ -1,11 +1,13 @@
 #pragma once
 
-namespace otherside {
+namespace otherside
+{
 
-enum class AppEvent {
+enum class AppEvent
+{
     None,
     StartHost,
     StartClient
 };
 
-}
+} // namespace otherside
