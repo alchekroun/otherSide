@@ -18,7 +18,7 @@ namespace otherside
 {
 class ScreenRouter
 {
-  public:
+public:
     using EventSink = std::function<void(AppEvent)>;
 
     explicit ScreenRouter(EventSink sink) : _eventSink(std::move(sink))
@@ -57,7 +57,7 @@ class ScreenRouter
         rlImGuiEnd();
     }
 
-  private:
+private:
     std::vector<std::string> _displayMessages;
 
     EventSink _eventSink;

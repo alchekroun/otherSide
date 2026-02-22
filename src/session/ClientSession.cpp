@@ -1,5 +1,6 @@
 #include "ClientSession.h"
 #include "message/NetMessage.h"
+#include "utils.h"
 
 namespace otherside
 {
@@ -50,35 +51,35 @@ void ClientSession::run()
 void ClientSession::onOfferClb(const rtc::Description &offer)
 {
     _pc = createPeerConnection(offer);
-    _dcm = std::make_unique<ClientDCMessageManager>(_pc);
 }
 
-std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(const rtc::Description &offer)
+std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(
+    const rtc::Description &offer)
 {
     rtc::Configuration config;
     config.iceServers.clear();
     auto pc = std::make_shared<rtc::PeerConnection>(config);
+    _dcm = std::make_unique<ClientDCMessageManager>(pc);
 
     pc->onStateChange([this](rtc::PeerConnection::State state) { _log->msg("State : ", state); });
 
-    pc->onGatheringStateChange([wpc = make_weak_ptr(pc), this](rtc::PeerConnection::GatheringState state) {
-        _log->msg("Gathering State : ", state);
-        if (state == rtc::PeerConnection::GatheringState::Complete)
-        {
-            if (auto pc = wpc.lock())
+    pc->onGatheringStateChange(
+        [wpc = utils::make_weak_ptr(pc), this](rtc::PeerConnection::GatheringState state) {
+            _log->msg("Gathering State : ", state);
+            if (state == rtc::PeerConnection::GatheringState::Complete)
             {
-                auto description = pc->localDescription();
-                qlexnet::Message<MsgType> msg;
-                msg.header.id = MsgType::READY;
-                qlexnet::MessageWriter mw(msg);
-                mw.writeString(description->typeString());
-                mw.writeString(description.value());
-                _sc->send(msg);
+                if (auto pc = wpc.lock())
+                {
+                    auto description = pc->localDescription();
+                    qlexnet::Message<MsgType> msg;
+                    msg.header.id = MsgType::READY;
+                    qlexnet::MessageWriter mw(msg);
+                    mw.writeString(description->typeString());
+                    mw.writeString(description.value());
+                    _sc->send(msg);
+                }
             }
-        }
-    });
-
-    pc->onTrack([this](const std::shared_ptr<rtc::Track> &tr) { _log->msg("onTrack"); });
+        });
 
     pc->onDataChannel([this](const std::shared_ptr<rtc::DataChannel> &dc) {
         _log->msg("Data Channel (", dc->label(), ") received.");
@@ -88,7 +89,8 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(const r
             _dcm->assignChannel(DCMessageType::HEARTBEAT, dc);
             _dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const UiMessage &msg) {
                 _rxMessageFeed->push(msg);
-                _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, PeerId::CLIENT, nowMs(), 0, "Ping"});
+                _txMessageFeed->push(
+                    UiMessage{DCMessageType::HEARTBEAT, PeerId::CLIENT, utils::nowMs(), 0, "Ping"});
                 return;
             });
             break;
@@ -103,6 +105,24 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(const r
             break;
         }
     });
+    uint8_t payloadType = 96;
+    auto recvVideo = rtc::Description::Video("video");
+    recvVideo.setDirection(rtc::Description::Direction::RecvOnly);
+    recvVideo.addH264Codec(payloadType);
+    _track = pc->addTrack(recvVideo);
+    auto session = std::make_shared<rtc::RtcpReceivingSession>();
+    _track->setMediaHandler(session);
+    _track->onOpen([this]() { _log->msg("Video track open."); });
+    _track->onClosed([this]() { _log->msg("Video track closed."); });
+    _track->onError([this](std::string e) { _log->msg("Video track error: ", e); });
+    _track->onMessage([this](rtc::message_variant rawMsg) {
+        if (std::holds_alternative<rtc::binary>(rawMsg))
+        {
+            const auto &pkt = std::get<rtc::binary>(rawMsg);
+            _vd->pushEncodedFrame(reinterpret_cast<const uint8_t *>(pkt.data()), pkt.size());
+        }
+    });
+
     pc->setRemoteDescription(offer);
     pc->createAnswer();
     return pc;
@@ -111,6 +131,7 @@ std::shared_ptr<rtc::PeerConnection> ClientSession::createPeerConnection(const r
 void ClientSession::sendMessage(const UiMessage &msg)
 {
     auto bytes = serialize(msg);
+    _log->msg("Sending : ", msg.text);
     _dcm->sendBinary(msg.type, bytes);
 }
 

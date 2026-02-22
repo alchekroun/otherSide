@@ -1,5 +1,6 @@
 #include "HostSession.h"
 #include "message/DCMessageManager.h"
+#include "utils.h"
 
 namespace otherside
 {
@@ -15,6 +16,7 @@ void HostSession::start()
 
 void HostSession::stop()
 {
+    _source->stop();
     _ss->running = false;
     _ss->stop();
     if (_signaling_thread.joinable())
@@ -42,7 +44,6 @@ void HostSession::update(float dt)
     while (!_txMessageFeed->empty())
     {
         auto msgs = _txMessageFeed->consume();
-        _log->msg("About to send ", msgs.size(), " messages.");
         for (const auto &msg : msgs)
         {
             sendMessage(msg);
@@ -54,9 +55,16 @@ void HostSession::onRequestClb(uint32_t clientId)
 {
     auto cc = createClientConnection(_config, clientId);
 
+    createTrack(cc);
     createDataChannels(cc);
 
-    cc->_peerConnection->createOffer();
+    cc->videoSender =
+        std::make_unique<VideoSender>(cc->video->track, std::make_unique<FFmpegH264Encoder>(
+                                                           640, 480, 24));
+
+    _source->setSink([cc](const RawFrame &frame) { cc->videoSender->onFrame(frame); });
+
+    cc->pc->createOffer();
     _clients.emplace(clientId, cc);
 }
 
@@ -65,7 +73,8 @@ void HostSession::createDataChannels(const std::shared_ptr<ClientConnection> &cc
     cc->dcm->createChannel(DCMessageType::HEARTBEAT, true, true);
     cc->dcm->addOnMessageClb(DCMessageType::HEARTBEAT, [this](const UiMessage &msg) {
         _rxMessageFeed->push(msg);
-        _txMessageFeed->push(UiMessage{DCMessageType::HEARTBEAT, PeerId::HOST, nowMs(), 0, "Ping"});
+        _txMessageFeed->push(
+            UiMessage{DCMessageType::HEARTBEAT, PeerId::HOST, utils::nowMs(), 0, "Ping"});
         return;
     });
 
@@ -76,16 +85,21 @@ void HostSession::createDataChannels(const std::shared_ptr<ClientConnection> &cc
     });
 }
 
-std::shared_ptr<ClientConnection> HostSession::createClientConnection(const rtc::Configuration &_config,
-                                                                      uint32_t clientId)
+std::shared_ptr<ClientConnection> HostSession::createClientConnection(
+    const rtc::Configuration &_config, uint32_t clientId)
 {
     auto pc = std::make_shared<rtc::PeerConnection>(_config);
     auto client = std::make_shared<ClientConnection>(pc);
 
-    pc->onStateChange(
-        [clientId, this](rtc::PeerConnection::State state) { _log->msg(clientId, " - State : ", state); });
+    pc->onStateChange([clientId, this](rtc::PeerConnection::State state) {
+        _log->msg(clientId, " - State : ", state);
+        if (state == rtc::PeerConnection::State::Connected)
+        {
+        }
+    });
 
-    pc->onGatheringStateChange([clientId, wpc = make_weak_ptr(pc), this](rtc::PeerConnection::GatheringState state) {
+    pc->onGatheringStateChange([clientId, wpc = utils::make_weak_ptr(pc),
+                                this](rtc::PeerConnection::GatheringState state) {
         _log->msg("Gathering State : ", state);
         if (state == rtc::PeerConnection::GatheringState::Complete)
         {
@@ -106,9 +120,55 @@ std::shared_ptr<ClientConnection> HostSession::createClientConnection(const rtc:
     return client;
 }
 
+// client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc =
+// make_weak_ptr(client)]() {
+//     MainThread.dispatch([wc]() {
+//         if (auto c = wc.lock()) {
+//             addToStream(c, true);
+//         }
+//     });
+//     cout << "Video from " << id << " opened" << endl;
+// });
+
+void HostSession::createTrack(const std::shared_ptr<ClientConnection> &cc)
+{
+
+    uint8_t payloadType = 96;
+    uint32_t ssrc = 1;
+    std::string cname = "video";
+    std::string msid = "stream";
+
+    auto video = rtc::Description::Video(cname);
+    video.setDirection(rtc::Description::Direction::SendOnly);
+    video.addH264Codec(payloadType);
+    video.addSSRC(ssrc, cname, msid, cname);
+    auto track = cc->pc->addTrack(video);
+
+    auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(
+        ssrc, cname, payloadType, rtc::H264RtpPacketizer::ClockRate);
+
+    auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+        rtc::NalUnit::Separator::StartSequence, rtpConfig);
+
+    auto srReporter = std::make_shared<rtc::RtcpSrReporter>(rtpConfig);
+    packetizer->addToChain(srReporter);
+
+    auto nackResponder = std::make_shared<rtc::RtcpNackResponder>();
+    packetizer->addToChain(nackResponder);
+
+    track->setMediaHandler(packetizer);
+    track->onOpen([this]() {
+        _log->msg("track open.");
+        _source->start();
+    });
+
+    cc->video = std::make_shared<ClientTrackData>(track, srReporter);
+}
+
 void HostSession::sendMessage(const UiMessage &msg)
 {
     auto bytes = serialize(msg);
+    _log->msg("Sending : ", msg.text);
     _clients.begin()->second->dcm->sendBinary(msg.type, bytes);
 }
 

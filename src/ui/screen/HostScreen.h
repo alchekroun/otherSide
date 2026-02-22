@@ -9,7 +9,7 @@ namespace otherside
 
 class HostScreen : public IScreen
 {
-  public:
+public:
     HostScreen(EventSink sink, const std::shared_ptr<IMessageFeed> &rxFeed_,
                const std::shared_ptr<UiMessageFeed> &txFeed_)
         : IScreen(std::move(sink)), _messagePanel(PeerId::HOST, rxFeed_, txFeed_)
@@ -18,7 +18,7 @@ class HostScreen : public IScreen
 
     void render() override
     {
-        ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
         ImGui::Begin("Host", nullptr, ImGuiWindowFlags_NoCollapse);
 
         ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status : Connected");
@@ -30,7 +30,7 @@ class HostScreen : public IScreen
         ImGui::End();
     }
 
-  private:
+private:
     MessagePanel _messagePanel;
 };
 

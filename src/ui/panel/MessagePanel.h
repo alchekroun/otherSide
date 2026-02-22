@@ -6,14 +6,16 @@
 // #include "misc/cpp/imgui_stdlib.h"
 // #include "misc/cpp/imgui_stdlib.cpp"
 #include "message/NetMessageFeed.h"
+#include "utils.h"
 
 namespace otherside
 {
 
 class DisplayMesssageFeed
 {
-  public:
-    DisplayMesssageFeed(const std::shared_ptr<IMessageFeed> &rxFeed_, const std::shared_ptr<UiMessageFeed> &txFeed_)
+public:
+    DisplayMesssageFeed(const std::shared_ptr<IMessageFeed> &rxFeed_,
+                        const std::shared_ptr<UiMessageFeed> &txFeed_)
         : _rxFeed(rxFeed_), _txFeed(txFeed_)
     {
     }
@@ -30,7 +32,7 @@ class DisplayMesssageFeed
         return _messages;
     }
 
-  private:
+private:
     void update()
     {
         for (auto &msg : _rxFeed->consume())
@@ -46,7 +48,7 @@ class DisplayMesssageFeed
 
 class InputMessagePanel : public IPanel
 {
-  public:
+public:
     explicit InputMessagePanel(PeerId source, const std::shared_ptr<DisplayMesssageFeed> &feed)
         : _feed(feed), _source(source)
     {
@@ -69,14 +71,15 @@ class InputMessagePanel : public IPanel
         ImGui::EndChild();
     }
 
-  private:
+private:
     void sendMessage()
     {
         if (_messageBuf[0] == '\0')
         {
             return;
         }
-        _feed->pushMessage(UiMessage{DCMessageType::MESSAGE, _source, nowMs(), 0, _messageBuf});
+        _feed->pushMessage(
+            UiMessage{DCMessageType::MESSAGE, _source, utils::nowMs(), 0, _messageBuf});
         _messageBuf[0] = '\0';
     }
 
@@ -87,7 +90,7 @@ class InputMessagePanel : public IPanel
 
 class DisplayedMessagePanel : public IPanel
 {
-  public:
+public:
     explicit DisplayedMessagePanel(PeerId source, const std::shared_ptr<DisplayMesssageFeed> &feed)
         : _feed(feed), _source(source)
     {
@@ -111,8 +114,8 @@ class DisplayedMessagePanel : public IPanel
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0, 1));
             }
-            ImGui::TextWrapped("[%s][%s] %s", formatTime(msg.createdTs).c_str(), peerIdToString[msg.from].c_str(),
-                               msg.text.c_str());
+            ImGui::TextWrapped("[%s][%s] %s", formatTime(msg.createdTs).c_str(),
+                               peerIdToString[msg.from].c_str(), msg.text.c_str());
             ImGui::PopStyleColor();
         }
 
@@ -125,8 +128,8 @@ class DisplayedMessagePanel : public IPanel
         ImGui::EndChild();
     }
 
-  private:
-    static std::string formatTime(TimestampMs ts)
+private:
+    static std::string formatTime(utils::TimestampMs ts)
     {
         std::time_t t = static_cast<std::time_t>(ts) / 1000;
         std::tm tm{};
@@ -136,18 +139,20 @@ class DisplayedMessagePanel : public IPanel
         return buf;
     }
 
-    std::unordered_map<PeerId, std::string> peerIdToString = {{PeerId::HOST, "Host"}, {PeerId::CLIENT, "Client"}};
+    std::unordered_map<PeerId, std::string> peerIdToString = {{PeerId::HOST, "Host"},
+                                                              {PeerId::CLIENT, "Client"}};
     PeerId _source;
     std::shared_ptr<DisplayMesssageFeed> _feed;
 };
 
 class MessagePanel : public IPanel
 {
-  public:
+public:
     MessagePanel(PeerId source, const std::shared_ptr<IMessageFeed> &rxFeed_,
                  const std::shared_ptr<UiMessageFeed> &txFeed_)
         : _displayedMessageFeed(std::make_shared<DisplayMesssageFeed>(rxFeed_, txFeed_)),
-          _displayedMessagePanel(source, _displayedMessageFeed), _inputMessagePanel(source, _displayedMessageFeed) {};
+          _displayedMessagePanel(source, _displayedMessageFeed),
+          _inputMessagePanel(source, _displayedMessageFeed) {};
 
     void render() override
     {
@@ -158,7 +163,7 @@ class MessagePanel : public IPanel
         ImGui::EndChild();
     }
 
-  private:
+private:
     std::shared_ptr<DisplayMesssageFeed> _displayedMessageFeed;
     DisplayedMessagePanel _displayedMessagePanel;
     InputMessagePanel _inputMessagePanel;

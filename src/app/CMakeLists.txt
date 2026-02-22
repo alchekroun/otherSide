@@ -12,4 +12,5 @@ target_link_libraries(app
     PUBLIC
         imgui
         rlImGui
+        media
 )

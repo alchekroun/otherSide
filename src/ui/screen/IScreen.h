@@ -7,7 +7,7 @@ namespace otherside
 
 class IScreen
 {
-  public:
+public:
     using EventSink = std::function<void(AppEvent)>;
 
     explicit IScreen(EventSink sink) : _eventSink(std::move(sink))
@@ -17,7 +17,7 @@ class IScreen
 
     virtual void render() = 0;
 
-  protected:
+protected:
     EventSink _eventSink;
 };
 

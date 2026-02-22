@@ -10,7 +10,7 @@ namespace otherside
 
 class IMessageFeed
 {
-  public:
+public:
     virtual ~IMessageFeed() = default;
     virtual bool empty() = 0;
     virtual std::vector<UiMessage> consume() = 0;
@@ -18,11 +18,11 @@ class IMessageFeed
 
 class UiMessageFeed final : public IMessageFeed
 {
-  public:
-    void push(UiMessage msg)
+public:
+    void push(const UiMessage &msg)
     {
         std::scoped_lock lock(_mtx);
-        _buffer.push_back(std::move(msg));
+        _buffer.push_back(msg);
     }
 
     std::vector<UiMessage> consume() override
@@ -39,7 +39,7 @@ class UiMessageFeed final : public IMessageFeed
         return _buffer.empty();
     }
 
-  private:
+private:
     std::mutex _mtx;
     std::vector<UiMessage> _buffer;
 };

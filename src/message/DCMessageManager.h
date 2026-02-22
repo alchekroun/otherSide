@@ -12,7 +12,7 @@ class DCMessageManager
 {
     using MsgClb = std::function<void(const UiMessage &)>;
 
-  public:
+public:
     void send(DCMessageType type, const std::string &message);
     void sendBinary(DCMessageType type, const std::vector<uint8_t> &data);
 
@@ -21,16 +21,16 @@ class DCMessageManager
         _msgClbByChannelType[type] = std::move(callback);
     }
 
-    std::unordered_map<std::string, DCMessageType> labelToType = {{"Heartbeat", DCMessageType::HEARTBEAT},
-                                                                  {"Message", DCMessageType::MESSAGE}};
+    std::unordered_map<std::string, DCMessageType> labelToType = {
+        {"Heartbeat", DCMessageType::HEARTBEAT}, {"Message", DCMessageType::MESSAGE}};
 
-  protected:
+protected:
     DCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : _pc(pc_)
     {
     }
 
-    std::unordered_map<DCMessageType, std::string> typeToLabel = {{DCMessageType::HEARTBEAT, "Heartbeat"},
-                                                                  {DCMessageType::MESSAGE, "Message"}};
+    std::unordered_map<DCMessageType, std::string> typeToLabel = {
+        {DCMessageType::HEARTBEAT, "Heartbeat"}, {DCMessageType::MESSAGE, "Message"}};
     std::shared_ptr<rtc::PeerConnection> _pc;
     std::unordered_map<DCMessageType, std::shared_ptr<rtc::DataChannel>> _channels;
     std::unordered_set<DCMessageType> _openChannels;
@@ -40,27 +40,27 @@ class DCMessageManager
 
 class HostDCMessageManager : public DCMessageManager
 {
-  public:
+public:
     HostDCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : DCMessageManager(pc_)
     {
     }
 
     void createChannel(DCMessageType type, bool reliable, bool ordered);
 
-  private:
+private:
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("HostDCMessageManager");
 };
 
 class ClientDCMessageManager : public DCMessageManager
 {
-  public:
+public:
     ClientDCMessageManager(const std::shared_ptr<rtc::PeerConnection> &pc_) : DCMessageManager(pc_)
     {
     }
 
-    void assignChannel(DCMessageType type, std::shared_ptr<rtc::DataChannel> dc);
+    void assignChannel(DCMessageType type, const std::shared_ptr<rtc::DataChannel> &dc);
 
-  private:
+private:
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("ClientDCMessageManager");
 };
 

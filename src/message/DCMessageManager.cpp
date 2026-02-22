@@ -1,11 +1,12 @@
 #include "DCMessageManager.h"
+#include "utils.h"
 
 namespace otherside
 {
 
 void DCMessageManager::send(DCMessageType type, const std::string &message)
 {
-    if (_openChannels.count(type) != 0 && _channels.count(type) != 0)
+    if (_openChannels.contains(type) && _channels.contains(type))
     {
         _channels[type]->send(message);
     }
@@ -13,7 +14,7 @@ void DCMessageManager::send(DCMessageType type, const std::string &message)
 
 void DCMessageManager::sendBinary(DCMessageType type, const std::vector<uint8_t> &data)
 {
-    if (_openChannels.count(type) != 0 && _channels.count(type) != 0)
+    if (_openChannels.contains(type) && _channels.contains(type))
     {
         _channels[type]->sendBuffer(data);
     }
@@ -42,9 +43,11 @@ void HostDCMessageManager::createChannel(DCMessageType type, bool reliable, bool
         _openChannels.erase(type);
     });
 
-    channel->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &rawMsg) {
-        if (_msgClbByChannelType.count(type) == 0)
+    channel->onMessage([this, type](const rtc::message_variant &rawMsg) {
+        if (!_msgClbByChannelType.contains(type))
+        {
             return;
+        }
         if (std::holds_alternative<rtc::string>(rawMsg))
         {
             _log->msg("Received string message. Prefer own protocol.");
@@ -53,17 +56,18 @@ void HostDCMessageManager::createChannel(DCMessageType type, bool reliable, bool
         else
         {
             auto msg = deserialize(std::get<rtc::binary>(rawMsg));
-            msg.receivedTs = nowMs();
+            msg.receivedTs = utils::nowMs();
             _msgClbByChannelType[type](msg);
         }
     });
 
-    channel->onError([type](const std::string &err) { std::cerr << "DC ERROR : " << err << std::endl; });
+    channel->onError([type](const std::string &err) { std::cerr << "DC ERROR : " << err << "\n"; });
 
     _channels[type] = channel;
 }
 
-void ClientDCMessageManager::assignChannel(DCMessageType type, std::shared_ptr<rtc::DataChannel> dc)
+void ClientDCMessageManager::assignChannel(DCMessageType type,
+                                           const std::shared_ptr<rtc::DataChannel> &dc)
 {
 
     dc->onOpen([this, type]() {
@@ -77,8 +81,10 @@ void ClientDCMessageManager::assignChannel(DCMessageType type, std::shared_ptr<r
     });
 
     dc->onMessage([this, type](const std::variant<rtc::binary, rtc::string> &rawMsg) {
-        if (_msgClbByChannelType.count(type) == 0)
+        if (!_msgClbByChannelType.contains(type))
+        {
             return;
+        }
         if (std::holds_alternative<rtc::string>(rawMsg))
         {
             _log->msg("Received string message. Prefer own protocol.");
@@ -87,12 +93,12 @@ void ClientDCMessageManager::assignChannel(DCMessageType type, std::shared_ptr<r
         else
         {
             auto msg = deserialize(std::get<rtc::binary>(rawMsg));
-            msg.receivedTs = nowMs();
+            msg.receivedTs = utils::nowMs();
             _msgClbByChannelType[type](msg);
         }
     });
 
-    dc->onError([type](const std::string &err) { std::cerr << "DC ERROR : " << err << std::endl; });
+    dc->onError([type](const std::string &err) { std::cerr << "DC ERROR : " << err << "\n"; });
 
     _channels[type] = dc;
 }

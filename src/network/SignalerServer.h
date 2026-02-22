@@ -14,7 +14,7 @@ using asio::ip::tcp;
 
 class SignalerServer : public qlexnet::ServerInterface<MsgType>
 {
-  public:
+public:
     SignalerServer(uint16_t port) : qlexnet::ServerInterface<MsgType>(port), running(true)
     {
     }
@@ -38,8 +38,8 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
 
     std::atomic<bool> running{false};
 
-  protected:
-    bool onClientConnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+protected:
+    bool onClientConnect(const std::shared_ptr<qlexnet::Connection<MsgType>> &client_) override
     {
         qlexnet::Message<MsgType> msg;
         msg.header.id = MsgType::ACK_CONNECTION;
@@ -47,12 +47,13 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
         return true;
     }
 
-    void onClientDisconnect(std::shared_ptr<qlexnet::Connection<MsgType>> client_) override
+    void onClientDisconnect(const std::shared_ptr<qlexnet::Connection<MsgType>> &client_) override
     {
         _log->msg("Client disconnected");
     }
 
-    void onMessage(std::shared_ptr<qlexnet::Connection<MsgType>> client_, qlexnet::Message<MsgType> &msg_) override
+    void onMessage(const std::shared_ptr<qlexnet::Connection<MsgType>> &client_,
+                   qlexnet::Message<MsgType> &msg_) override
     {
         switch (msg_.header.id)
         {
@@ -87,7 +88,7 @@ class SignalerServer : public qlexnet::ServerInterface<MsgType>
         }
     }
 
-  private:
+private:
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("SignalerServer");
 };
 

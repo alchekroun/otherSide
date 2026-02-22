@@ -67,9 +67,30 @@ link_directories(
     ${RTC_LIBRARY_DIR}
 )
 
+add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+add_link_options(-fsanitize=address)
+# FFmpeg
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(AVCODEC REQUIRED IMPORTED_TARGET libavcodec)
+pkg_check_modules(AVUTIL  REQUIRED IMPORTED_TARGET libavutil)
+pkg_check_modules(SWSCALE REQUIRED IMPORTED_TARGET libswscale)
+
+# pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
+#     libavcodec
+#     libavutil
+#     libswscale
+#     # Optional extras:
+#     libavformat
+#     libswresample
+# )
+
+
+
 add_subdirectory(src/app)
 add_subdirectory(src/session)
 add_subdirectory(src/message)
+add_subdirectory(src/media)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
@@ -89,5 +110,6 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE
         app
         session
+        media
         netMessage
 )

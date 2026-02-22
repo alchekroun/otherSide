@@ -9,11 +9,11 @@ namespace otherside
 
 class SessionThreaded
 {
-  protected:
+protected:
     std::thread _thread;
     std::atomic<bool> _running{false};
 
-  public:
+public:
     virtual ~SessionThreaded()
     {
         stop();
@@ -34,13 +34,13 @@ class SessionThreaded
         }
     }
 
-  protected:
+protected:
     virtual void run() = 0;
 };
 
 class ISession : public SessionThreaded
 {
-  public:
+public:
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual void update(float dt) = 0;
@@ -48,7 +48,7 @@ class ISession : public SessionThreaded
 
 class ISessionControl
 {
-  public:
+public:
     virtual void sendMessage(const UiMessage &msg) = 0;
 };
 

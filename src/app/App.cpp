@@ -102,9 +102,11 @@ void Application::initHostMode()
 }
 void Application::initClientMode()
 {
-    _session = std::make_unique<ClientSession>("127.0.0.1", 8000, _rxMessagesFeed, _txMessageFeed);
+    _session = std::make_unique<ClientSession>("127.0.0.1", 8000, _rxMessagesFeed, _txMessageFeed,
+                                               _frameFeed);
     _session->start();
-    _gui->registerScreen<ClientScreen>(AppScreen::CLIENT, _rxMessagesFeed, _txMessageFeed);
+    _gui->registerScreen<ClientScreen>(AppScreen::CLIENT, _rxMessagesFeed, _txMessageFeed,
+                                       _frameFeed);
 
     setState(AppState::CONNECTED);
 }

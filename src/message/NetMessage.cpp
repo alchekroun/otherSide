@@ -3,12 +3,6 @@
 namespace otherside
 {
 
-TimestampMs nowMs()
-{
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
-        .count();
-}
-
 std::vector<uint8_t> serialize(const UiMessage &msg)
 {
     std::vector<uint8_t> buf;

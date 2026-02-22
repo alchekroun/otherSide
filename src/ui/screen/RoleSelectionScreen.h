@@ -8,7 +8,7 @@ namespace otherside
 
 class RoleSelectionScreen : public IScreen
 {
-  public:
+public:
     RoleSelectionScreen(EventSink sink) : IScreen(std::move(sink))
     {
     }

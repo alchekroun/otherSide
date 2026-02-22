@@ -19,10 +19,12 @@ class Application
 {
     using EventSink = std::function<void(AppEvent)>;
 
-  public:
+public:
     Application()
         : _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
-          _rxMessagesFeed(std::make_unique<UiMessageFeed>()), _txMessageFeed(std::make_unique<UiMessageFeed>())
+          _rxMessagesFeed(std::make_shared<UiMessageFeed>()),
+          _txMessageFeed(std::make_shared<UiMessageFeed>()),
+          _frameFeed(std::make_shared<FrameFeed>())
     {
         _gui->registerScreen<RoleSelectionScreen>(AppScreen::ROLE_SELECTION);
         _gui->registerScreen<IdleScreen>(AppScreen::IDLE);
@@ -39,7 +41,7 @@ class Application
     void start();
     void stop();
 
-  private:
+private:
     void initHostMode();
     void initClientMode();
 
@@ -50,6 +52,8 @@ class Application
     std::shared_ptr<UiMessageFeed> _txMessageFeed;
     std::unique_ptr<ScreenRouter> _gui;
     std::unique_ptr<ISession> _session;
+
+    std::shared_ptr<FrameFeed> _frameFeed;
 
     std::queue<AppEvent> _eventQueue;
     std::mutex _eventMutex;

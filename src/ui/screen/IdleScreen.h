@@ -7,7 +7,7 @@ namespace otherside
 
 class IdleScreen : public IScreen
 {
-  public:
+public:
     IdleScreen(EventSink sink) : IScreen(std::move(sink))
     {
     }

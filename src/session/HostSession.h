@@ -6,37 +6,22 @@
 #include <rtc/rtc.hpp>
 #include <string>
 
+#include "ClientConnection.h"
 #include "ISession.h"
 #include "message/DCMessageManager.h"
 #include "message/NetMessageFeed.h"
 #include "network/SignalerServer.h"
 #include "utils.h"
+#include <FFmpegH264Encoder.h>
+#include <VideoSender.h>
+#include <VideoSource.h>
 
 namespace otherside
 {
 
-// template <class T> std::weak_ptr<T> make_weak_ptr(std::shared_ptr<T> ptr) { return ptr; }
-
-struct ClientConnection
-{
-    ClientConnection(const std::shared_ptr<rtc::PeerConnection> &pc) : _peerConnection(pc) {};
-
-    std::unique_ptr<HostDCMessageManager> dcm;
-    const std::shared_ptr<rtc::PeerConnection> _peerConnection;
-
-    void disconnect()
-    {
-        _peerConnection->close();
-    }
-
-  private:
-    // const std::shared_ptr<qlexnet::Connection<MsgType>> _tcpConnection;
-    // const std::shared_ptr<rtc::PeerConnection> _peerConnection;
-};
-
 class HostSession : public ISession, public ISessionControl
 {
-  public:
+public:
     HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
                 const std::shared_ptr<UiMessageFeed> &txMessageFeed)
         : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
@@ -49,10 +34,11 @@ class HostSession : public ISession, public ISessionControl
         _ss->onReady = [this](uint32_t clientId, const rtc::Description &desc) {
             if (auto c = _clients.find(clientId); c != _clients.end())
             {
-                auto pc = c->second->_peerConnection;
+                auto pc = c->second->pc;
                 pc->setRemoteDescription(desc);
             }
         };
+        _source = std::make_unique<FakeVideoSource>(640, 480, 24);
     }
     ~HostSession() override
     {
@@ -65,15 +51,19 @@ class HostSession : public ISession, public ISessionControl
 
     void sendMessage(const UiMessage &msg) override;
 
-  private:
+private:
     void run() override;
 
     void onRequestClb(uint32_t clientId);
-    std::shared_ptr<ClientConnection> createClientConnection(const rtc::Configuration &_config, uint32_t clientId);
+    std::shared_ptr<ClientConnection> createClientConnection(const rtc::Configuration &_config,
+                                                             uint32_t clientId);
     void createDataChannels(const std::shared_ptr<ClientConnection> &cc);
+    void createTrack(const std::shared_ptr<ClientConnection> &cc);
 
     std::shared_ptr<UiMessageFeed> _rxMessageFeed;
     std::shared_ptr<UiMessageFeed> _txMessageFeed;
+
+    std::unique_ptr<FakeVideoSource> _source;
 
     std::thread _signaling_thread;
     std::unique_ptr<SignalerServer> _ss;
