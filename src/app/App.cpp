@@ -94,19 +94,20 @@ std::optional<AppEvent> Application::popEvent()
 
 void Application::initHostMode()
 {
-    _session = std::make_unique<HostSession>(8000, _rxMessagesFeed, _txMessageFeed);
+    _session = std::make_unique<HostSession>(8000, _rxMessagesFeed, _txMessageFeed, _rxFrameFeed);
     _session->start();
-    _gui->registerScreen<HostScreen>(AppScreen::HOST, _rxMessagesFeed, _txMessageFeed);
+    _gui->registerScreen<HostScreen>(AppScreen::HOST, _rxMessagesFeed, _txMessageFeed,
+                                     _rxFrameFeed);
 
     setState(AppState::HOSTING);
 }
 void Application::initClientMode()
 {
     _session = std::make_unique<ClientSession>("127.0.0.1", 8000, _rxMessagesFeed, _txMessageFeed,
-                                               _frameFeed);
+                                               _rxFrameFeed);
     _session->start();
     _gui->registerScreen<ClientScreen>(AppScreen::CLIENT, _rxMessagesFeed, _txMessageFeed,
-                                       _frameFeed);
+                                       _rxFrameFeed);
 
     setState(AppState::CONNECTED);
 }

@@ -8,6 +8,8 @@
 
 #include "ClientConnection.h"
 #include "ISession.h"
+#include "media/FrameFeed.h"
+#include "media/IVideoDecoder.h"
 #include "media/IVideoSource.h"
 #include "media/VideoSender.h"
 #include "message/DCMessageManager.h"
@@ -22,7 +24,8 @@ class HostSession : public ISession, public ISessionControl
 {
 public:
     HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
-                const std::shared_ptr<UiMessageFeed> &txMessageFeed);
+                const std::shared_ptr<UiMessageFeed> &txMessageFeed,
+                const std::shared_ptr<FrameFeed> &rxFrameFeed_);
     ~HostSession() override
     {
         stop();
@@ -41,11 +44,13 @@ private:
     std::shared_ptr<ClientConnection> createClientConnection(const rtc::Configuration &_config,
                                                              uint32_t clientId);
     void createDataChannels(const std::shared_ptr<ClientConnection> &cc);
-    void createTrack(const std::shared_ptr<ClientConnection> &cc);
 
     std::shared_ptr<UiMessageFeed> _rxMessageFeed;
     std::shared_ptr<UiMessageFeed> _txMessageFeed;
 
+    std::shared_ptr<FrameFeed> _rxFrameFeed;
+
+    std::unique_ptr<IVideoDecoder> _videoDecoder;
     std::unique_ptr<IVideoSource> _source;
 
     std::thread _signaling_thread;

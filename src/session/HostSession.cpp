@@ -1,15 +1,18 @@
 #include "HostSession.h"
 #include "media/FakeVideoSource.h"
+#include "media/H264/H264Decoder.h"
 #include "media/H264/H264Encoder.h"
 #include "message/DCMessageManager.h"
+#include "session/TrackSetup.h"
 #include "utils.h"
 
 namespace otherside
 {
 
 HostSession::HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
-                         const std::shared_ptr<UiMessageFeed> &txMessageFeed)
-    : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
+                         const std::shared_ptr<UiMessageFeed> &txMessageFeed,
+                         const std::shared_ptr<FrameFeed> &rxFrameFeed_)
+    : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed), _rxFrameFeed(rxFrameFeed_)
 {
     _ss = std::make_unique<SignalerServer>(port);
     _config.iceServers.clear();
@@ -23,6 +26,17 @@ HostSession::HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rx
             pc->setRemoteDescription(desc);
         }
     };
+    _videoDecoder = std::make_unique<H264Decoder>();
+    _videoDecoder->setFrameCallback([this](const uint8_t *rgba, int w, int h) {
+        RawFrame frame;
+        frame.width = static_cast<uint32_t>(w);
+        frame.height = static_cast<uint32_t>(h);
+        frame.format = PixelFormat::RGBA;
+        frame.timestampMs = utils::nowMs();
+        frame.data.resize(static_cast<size_t>(w) * static_cast<size_t>(h) * 4);
+        std::memcpy(frame.data.data(), rgba, frame.data.size());
+        _rxFrameFeed->push(frame);
+    });
     _source = std::make_unique<FakeVideoSource>(640, 480, 24);
 }
 
@@ -76,13 +90,27 @@ void HostSession::onRequestClb(uint32_t clientId)
 {
     auto cc = createClientConnection(_config, clientId);
 
-    createTrack(cc);
+    auto tx = makeH264TxTrack(cc->pc, 96, 1, "host-video", "host-stream",
+                              rtc::Description::Direction::SendOnly,
+                              [this]() {
+                                  _log->msg("host tx track open.");
+                                  _source->start();
+                              });
+    cc->txVideo = std::make_shared<ClientTrackData>(tx.track, tx.senderReport);
+    cc->txVideoSender =
+        std::make_unique<VideoSender>(cc->txVideo->track, std::make_unique<H264Encoder>(640, 480, 24));
+    _source->setSink([cc](const RawFrame &frame) { cc->txVideoSender->onFrame(frame); });
+
+    cc->rxVideoTrack = makeH264RxTrack(cc->pc, 96, "client-video",
+                                       rtc::Description::Direction::RecvOnly,
+                                       [this](const rtc::binary &pkt) {
+                                           _videoDecoder->decode(
+                                               reinterpret_cast<const uint8_t *>(pkt.data()),
+                                               pkt.size());
+                                       });
+    cc->rxVideoTrack->onOpen([this]() { _log->msg("host rx track open."); });
+
     createDataChannels(cc);
-
-    cc->videoSender = std::make_unique<VideoSender>(cc->video->track,
-                                                    std::make_unique<H264Encoder>(640, 480, 24));
-
-    _source->setSink([cc](const RawFrame &frame) { cc->videoSender->onFrame(frame); });
 
     cc->pc->createOffer();
     _clients.emplace(clientId, cc);
@@ -138,51 +166,6 @@ std::shared_ptr<ClientConnection> HostSession::createClientConnection(
 
     client->dcm = std::make_unique<HostDCMessageManager>(pc);
     return client;
-}
-
-// client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc =
-// make_weak_ptr(client)]() {
-//     MainThread.dispatch([wc]() {
-//         if (auto c = wc.lock()) {
-//             addToStream(c, true);
-//         }
-//     });
-//     cout << "Video from " << id << " opened" << endl;
-// });
-
-void HostSession::createTrack(const std::shared_ptr<ClientConnection> &cc)
-{
-
-    uint8_t payloadType = 96;
-    uint32_t ssrc = 1;
-    std::string cname = "video";
-    std::string msid = "stream";
-
-    auto video = rtc::Description::Video(cname);
-    video.setDirection(rtc::Description::Direction::SendOnly);
-    video.addH264Codec(payloadType);
-    video.addSSRC(ssrc, cname, msid, cname);
-    auto track = cc->pc->addTrack(video);
-
-    auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(
-        ssrc, cname, payloadType, rtc::H264RtpPacketizer::ClockRate);
-
-    auto packetizer =
-        std::make_shared<rtc::H264RtpPacketizer>(rtc::NalUnit::Separator::StartSequence, rtpConfig);
-
-    auto srReporter = std::make_shared<rtc::RtcpSrReporter>(rtpConfig);
-    packetizer->addToChain(srReporter);
-
-    auto nackResponder = std::make_shared<rtc::RtcpNackResponder>();
-    packetizer->addToChain(nackResponder);
-
-    track->setMediaHandler(packetizer);
-    track->onOpen([this]() {
-        _log->msg("track open.");
-        _source->start();
-    });
-
-    cc->video = std::make_shared<ClientTrackData>(track, srReporter);
 }
 
 void HostSession::sendMessage(const UiMessage &msg)

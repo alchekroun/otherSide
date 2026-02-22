@@ -11,8 +11,10 @@ class HostScreen : public IScreen
 {
 public:
     HostScreen(EventSink sink, const std::shared_ptr<IMessageFeed> &rxFeed_,
-               const std::shared_ptr<UiMessageFeed> &txFeed_)
-        : IScreen(std::move(sink)), _messagePanel(PeerId::HOST, rxFeed_, txFeed_)
+               const std::shared_ptr<UiMessageFeed> &txFeed_,
+               const std::shared_ptr<FrameFeed> &frameFeed_)
+        : IScreen(std::move(sink)), _messagePanel(PeerId::HOST, rxFeed_, txFeed_),
+          _videoPanel(frameFeed_)
     {
     }
 
@@ -26,12 +28,14 @@ public:
         ImGui::Separator();
 
         _messagePanel.render();
+        _videoPanel.render();
 
         ImGui::End();
     }
 
 private:
     MessagePanel _messagePanel;
+    VideoPanel _videoPanel;
 };
 
 } // namespace otherside

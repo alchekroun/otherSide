@@ -11,6 +11,8 @@
 #include "media/Frame.h"
 #include "media/FrameFeed.h"
 #include "media/IVideoDecoder.h"
+#include "media/IVideoSource.h"
+#include "media/VideoSender.h"
 #include "message/DCMessageManager.h"
 #include "message/NetMessageFeed.h"
 #include "network/SignalerClient.h"
@@ -25,7 +27,7 @@ public:
     ClientSession(const std::string &ip_addr, uint16_t port,
                   const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
                   const std::shared_ptr<UiMessageFeed> &txMessageFeed,
-                  const std::shared_ptr<FrameFeed> &frameFeed_);
+                  const std::shared_ptr<FrameFeed> &rxFrameFeed_);
     ~ClientSession() override
     {
         stop();
@@ -51,14 +53,17 @@ private:
     std::shared_ptr<UiMessageFeed> _rxMessageFeed;
     std::shared_ptr<UiMessageFeed> _txMessageFeed;
 
-    std::shared_ptr<FrameFeed> _frameFeed;
+    std::shared_ptr<FrameFeed> _rxFrameFeed;
+
+    std::unique_ptr<IVideoDecoder> _videoDecoder;
+    std::unique_ptr<IVideoSource> _source;
 
     std::thread _signaling_thread;
     std::unique_ptr<SignalerClient> _sc;
     std::shared_ptr<rtc::PeerConnection> _pc;
     std::unique_ptr<ClientDCMessageManager> _dcm;
     std::shared_ptr<rtc::Track> _track;
-    std::unique_ptr<IVideoDecoder> _vd;
+    std::shared_ptr<VideoSender> _txVideoSender;
 
     std::unique_ptr<Logger> _log = std::make_unique<Logger>("ClientSession");
 };

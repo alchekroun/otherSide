@@ -27,8 +27,9 @@ struct ClientConnection
 
     std::unique_ptr<HostDCMessageManager> dcm;
     const std::shared_ptr<rtc::PeerConnection> pc;
-    std::unique_ptr<VideoSender> videoSender;
-    std::shared_ptr<ClientTrackData> video;
+    std::shared_ptr<ClientTrackData> txVideo;
+    std::shared_ptr<rtc::Track> rxVideoTrack;
+    std::unique_ptr<VideoSender> txVideoSender;
 
     void disconnect()
     {

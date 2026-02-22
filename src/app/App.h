@@ -24,7 +24,7 @@ public:
         : _gui(std::make_unique<ScreenRouter>([this](AppEvent ev) { pushEvent(ev); })),
           _rxMessagesFeed(std::make_shared<UiMessageFeed>()),
           _txMessageFeed(std::make_shared<UiMessageFeed>()),
-          _frameFeed(std::make_shared<FrameFeed>())
+          _rxFrameFeed(std::make_shared<FrameFeed>())
     {
         _gui->registerScreen<RoleSelectionScreen>(AppScreen::ROLE_SELECTION);
         _gui->registerScreen<IdleScreen>(AppScreen::IDLE);
@@ -53,7 +53,7 @@ private:
     std::unique_ptr<ScreenRouter> _gui;
     std::unique_ptr<ISession> _session;
 
-    std::shared_ptr<FrameFeed> _frameFeed;
+    std::shared_ptr<FrameFeed> _rxFrameFeed;
 
     std::queue<AppEvent> _eventQueue;
     std::mutex _eventMutex;
