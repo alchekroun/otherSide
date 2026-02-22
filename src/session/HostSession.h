@@ -8,13 +8,13 @@
 
 #include "ClientConnection.h"
 #include "ISession.h"
+#include "media/FFmpegH264Encoder.h"
+#include "media/VideoSender.h"
+#include "media/VideoSource.h"
 #include "message/DCMessageManager.h"
 #include "message/NetMessageFeed.h"
 #include "network/SignalerServer.h"
 #include "utils.h"
-#include <FFmpegH264Encoder.h>
-#include <VideoSender.h>
-#include <VideoSource.h>
 
 namespace otherside
 {
