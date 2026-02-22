@@ -80,6 +80,7 @@ add_subdirectory(src/app)
 add_subdirectory(src/session)
 add_subdirectory(src/message)
 add_subdirectory(src/media)
+add_subdirectory(src/ui)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
