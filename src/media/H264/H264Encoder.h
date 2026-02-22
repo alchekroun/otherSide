@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VideoEncoder.h"
+#include "media/IVideoEncoder.h"
 
 extern "C"
 {
@@ -12,14 +12,14 @@ extern "C"
 namespace otherside
 {
 
-class FFmpegH264Encoder : public IVideoEncoder
+class H264Encoder : public IVideoEncoder
 {
 public:
-    FFmpegH264Encoder(uint32_t width, uint32_t height, uint8_t fps);
-    ~FFmpegH264Encoder() override;
+    H264Encoder(uint32_t width, uint32_t height, uint8_t fps);
+    ~H264Encoder() override;
 
-    FFmpegH264Encoder(const FFmpegH264Encoder &) = delete;
-    FFmpegH264Encoder &operator=(const FFmpegH264Encoder &) = delete;
+    H264Encoder(const H264Encoder &) = delete;
+    H264Encoder &operator=(const H264Encoder &) = delete;
 
     std::optional<EncodedFrame> encode(const RawFrame &frame) override;
 

@@ -12,24 +12,26 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
+#include "media/IVideoDecoder.h"
+
 namespace otherside
 {
-class VideoDecoder
+class H264Decoder : public IVideoDecoder
 {
 public:
     using FrameCallback = std::function<void(const uint8_t *rgb, int width, int height)>;
 
-    VideoDecoder();
-    ~VideoDecoder();
+    H264Decoder();
+    ~H264Decoder() override;
 
     // Non-copyable
-    VideoDecoder(const VideoDecoder &) = delete;
-    VideoDecoder &operator=(const VideoDecoder &) = delete;
+    H264Decoder(const H264Decoder &) = delete;
+    H264Decoder &operator=(const H264Decoder &) = delete;
 
-    void setFrameCallback(FrameCallback cb);
+    void setFrameCallback(FrameCallback cb) override;
 
     // Call this directly from _track->onMessage()
-    void pushEncodedFrame(const uint8_t *data, size_t size);
+    void decode(const uint8_t *data, size_t size) override;
 
 private:
     void initDecoder();

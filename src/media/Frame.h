@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <rtc/rtc.hpp>
+
 #include "utils.h"
 
 namespace otherside

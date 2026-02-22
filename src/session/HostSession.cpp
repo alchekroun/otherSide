@@ -1,4 +1,5 @@
 #include "HostSession.h"
+#include "media/H264/H264Encoder.h"
 #include "message/DCMessageManager.h"
 #include "utils.h"
 
@@ -58,9 +59,8 @@ void HostSession::onRequestClb(uint32_t clientId)
     createTrack(cc);
     createDataChannels(cc);
 
-    cc->videoSender =
-        std::make_unique<VideoSender>(cc->video->track, std::make_unique<FFmpegH264Encoder>(
-                                                           640, 480, 24));
+    cc->videoSender = std::make_unique<VideoSender>(cc->video->track,
+                                                    std::make_unique<H264Encoder>(640, 480, 24));
 
     _source->setSink([cc](const RawFrame &frame) { cc->videoSender->onFrame(frame); });
 
@@ -147,8 +147,8 @@ void HostSession::createTrack(const std::shared_ptr<ClientConnection> &cc)
     auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(
         ssrc, cname, payloadType, rtc::H264RtpPacketizer::ClockRate);
 
-    auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
-        rtc::NalUnit::Separator::StartSequence, rtpConfig);
+    auto packetizer =
+        std::make_shared<rtc::H264RtpPacketizer>(rtc::NalUnit::Separator::StartSequence, rtpConfig);
 
     auto srReporter = std::make_shared<rtc::RtcpSrReporter>(rtpConfig);
     packetizer->addToChain(srReporter);

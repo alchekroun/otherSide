@@ -8,7 +8,6 @@
 
 #include "ClientConnection.h"
 #include "ISession.h"
-#include "media/FFmpegH264Encoder.h"
 #include "media/VideoSender.h"
 #include "media/VideoSource.h"
 #include "message/DCMessageManager.h"

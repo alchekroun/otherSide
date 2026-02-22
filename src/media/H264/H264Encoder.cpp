@@ -1,42 +1,50 @@
-#include "FFmpegH264Encoder.h"
+#include "H264Encoder.h"
 
 #include <stdexcept>
 
 namespace otherside
 {
 
-FFmpegH264Encoder::FFmpegH264Encoder(uint32_t width, uint32_t height, uint8_t fps)
+H264Encoder::H264Encoder(uint32_t width, uint32_t height, uint8_t fps)
     : _width(width), _height(height), _fps(fps)
 {
     init();
 }
 
-FFmpegH264Encoder::~FFmpegH264Encoder()
+H264Encoder::~H264Encoder()
 {
-    if (_rgbaToYuv)
+    if (_rgbaToYuv != nullptr)
+    {
         sws_freeContext(_rgbaToYuv);
-    if (_pkt)
+    }
+    if (_pkt != nullptr)
+    {
         av_packet_free(&_pkt);
-    if (_yuvFrame)
+    }
+    if (_yuvFrame != nullptr)
+    {
         av_frame_free(&_yuvFrame);
-    if (_ctx)
+    }
+    if (_ctx != nullptr)
+    {
         avcodec_free_context(&_ctx);
+    }
 }
 
-void FFmpegH264Encoder::init()
+void H264Encoder::init()
 {
     _codec = avcodec_find_encoder_by_name("libx264");
-    if (!_codec)
+    if (_codec == nullptr)
     {
         _codec = avcodec_find_encoder(AV_CODEC_ID_H264);
     }
-    if (!_codec)
+    if (_codec == nullptr)
     {
         throw std::runtime_error("H264 encoder not found");
     }
 
     _ctx = avcodec_alloc_context3(_codec);
-    if (!_ctx)
+    if (_ctx == nullptr)
     {
         throw std::runtime_error("Failed to allocate H264 encoder context");
     }
@@ -60,7 +68,7 @@ void FFmpegH264Encoder::init()
     }
 
     _yuvFrame = av_frame_alloc();
-    if (!_yuvFrame)
+    if (_yuvFrame == nullptr)
     {
         throw std::runtime_error("Failed to allocate encoder frame");
     }
@@ -74,21 +82,21 @@ void FFmpegH264Encoder::init()
     }
 
     _pkt = av_packet_alloc();
-    if (!_pkt)
+    if (_pkt == nullptr)
     {
         throw std::runtime_error("Failed to allocate encoder packet");
     }
 
-    _rgbaToYuv = sws_getContext(_ctx->width, _ctx->height, AV_PIX_FMT_RGBA, _ctx->width,
-                                _ctx->height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, nullptr,
-                                nullptr, nullptr);
-    if (!_rgbaToYuv)
+    _rgbaToYuv =
+        sws_getContext(_ctx->width, _ctx->height, AV_PIX_FMT_RGBA, _ctx->width, _ctx->height,
+                       AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+    if (_rgbaToYuv == nullptr)
     {
         throw std::runtime_error("Failed to allocate RGBA->YUV conversion context");
     }
 }
 
-std::optional<EncodedFrame> FFmpegH264Encoder::encode(const RawFrame &frame)
+std::optional<EncodedFrame> H264Encoder::encode(const RawFrame &frame)
 {
     if (frame.format != PixelFormat::RGBA || frame.width != _width || frame.height != _height)
     {

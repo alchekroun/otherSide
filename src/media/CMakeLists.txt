@@ -1,6 +1,6 @@
 add_library(media STATIC
-    VideoDecoder.cpp
-    FFmpegH264Encoder.cpp
+    H264/H264Encoder.cpp
+    H264/H264Decoder.cpp
 )
 
 target_link_libraries(media

@@ -4,7 +4,7 @@
 #include <rtc/rtc.hpp>
 
 #include "Frame.h"
-#include "VideoEncoder.h"
+#include "IVideoEncoder.h"
 
 namespace otherside
 {
