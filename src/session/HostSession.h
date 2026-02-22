@@ -8,8 +8,8 @@
 
 #include "ClientConnection.h"
 #include "ISession.h"
+#include "media/IVideoSource.h"
 #include "media/VideoSender.h"
-#include "media/VideoSource.h"
 #include "message/DCMessageManager.h"
 #include "message/NetMessageFeed.h"
 #include "network/SignalerServer.h"
@@ -22,23 +22,7 @@ class HostSession : public ISession, public ISessionControl
 {
 public:
     HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
-                const std::shared_ptr<UiMessageFeed> &txMessageFeed)
-        : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
-    {
-        _ss = std::make_unique<SignalerServer>(port);
-        _config.iceServers.clear();
-        rtc::InitLogger(rtc::LogLevel::Debug);
-        _ss->onRequest = [this](uint32_t clientId) { onRequestClb(clientId); };
-
-        _ss->onReady = [this](uint32_t clientId, const rtc::Description &desc) {
-            if (auto c = _clients.find(clientId); c != _clients.end())
-            {
-                auto pc = c->second->pc;
-                pc->setRemoteDescription(desc);
-            }
-        };
-        _source = std::make_unique<FakeVideoSource>(640, 480, 24);
-    }
+                const std::shared_ptr<UiMessageFeed> &txMessageFeed);
     ~HostSession() override
     {
         stop();
@@ -62,7 +46,7 @@ private:
     std::shared_ptr<UiMessageFeed> _rxMessageFeed;
     std::shared_ptr<UiMessageFeed> _txMessageFeed;
 
-    std::unique_ptr<FakeVideoSource> _source;
+    std::unique_ptr<IVideoSource> _source;
 
     std::thread _signaling_thread;
     std::unique_ptr<SignalerServer> _ss;

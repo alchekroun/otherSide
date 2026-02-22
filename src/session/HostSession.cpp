@@ -1,10 +1,30 @@
 #include "HostSession.h"
+#include "media/FakeVideoSource.h"
 #include "media/H264/H264Encoder.h"
 #include "message/DCMessageManager.h"
 #include "utils.h"
 
 namespace otherside
 {
+
+HostSession::HostSession(uint16_t port, const std::shared_ptr<UiMessageFeed> &rxMessageFeed,
+                         const std::shared_ptr<UiMessageFeed> &txMessageFeed)
+    : _rxMessageFeed(rxMessageFeed), _txMessageFeed(txMessageFeed)
+{
+    _ss = std::make_unique<SignalerServer>(port);
+    _config.iceServers.clear();
+    rtc::InitLogger(rtc::LogLevel::Debug);
+    _ss->onRequest = [this](uint32_t clientId) { onRequestClb(clientId); };
+
+    _ss->onReady = [this](uint32_t clientId, const rtc::Description &desc) {
+        if (auto c = _clients.find(clientId); c != _clients.end())
+        {
+            auto pc = c->second->pc;
+            pc->setRemoteDescription(desc);
+        }
+    };
+    _source = std::make_unique<FakeVideoSource>(640, 480, 24);
+}
 
 void HostSession::start()
 {
